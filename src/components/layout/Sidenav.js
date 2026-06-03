@@ -158,6 +158,12 @@ const baseMenuItems = [
   },
   {
     type: 'single',
+    path: '/diocese',
+    label: 'Manage Diocese',
+    icon: '🏛️',
+  },
+  {
+    type: 'single',
     path: '/forane',
     label: 'Manage Forane',
     icon: '🏛️',
@@ -167,6 +173,24 @@ const baseMenuItems = [
     path: '/Parish',
     label: 'Manage Parish',
     icon: '⛪',
+  },
+   {
+    type: 'single',
+    path: '/congregation',
+    label: 'Manage Congregation',
+    icon: '🏛️',
+  },
+   {
+    type: 'single',
+    path: '/department',
+    label: 'Manage Departments',
+    icon: '🏛️',
+  },
+   {
+    type: 'single',
+    path: '/position',
+    label: 'Manage Position',
+    icon: '🏛️',
   },
   {
     type: 'single',
@@ -186,114 +210,121 @@ const baseMenuItems = [
     label: 'Manage Person',
     icon: '👤',
   },
-  {
-    type: 'header',
-    label: 'ACCOUNTS',
-  },
+  
   {
     type: 'single',
-    path: '/FamilyFinance',
-    label: 'Family Finance',
-    icon: '💰',
+    path: '/priest',
+    label: 'Manage Priest',
+    icon: '👤',
   },
-  {
-    type: 'single',
-    path: '/transactions',
-    label: 'Transaction',
-    icon: '💳',
-  },
-  {
-    type: 'header',
-    label: 'FINANCE SETTINGS',
-  },
-  {
-    type: 'single',
-    path: '/project',
-    label: 'Manage Other Project',
-    icon: '📋',
-  },
-  {
-    type: 'single',
-    path: '/community',
-    label: 'Manage Communities',
-    icon: '🤝',
-  },
-  {
-    type: 'single',
-    path: '/FinanceSettings',
-    label: 'Finance Settings',
-    icon: '⚙️',
-  },
-  {
-    type: 'header',
-    label: 'REPORTS',
-  },
-  {
-    type: 'single',
-    path: '/ReportsDashboard',
-    label: 'Report Dashboard',
-    icon: '📈',
-  },
-  {
-    type: 'single',
-    path: '/report',
-    label: 'Report Print',
-    icon: '🖨️',
-  },
-  {
-    type: 'single',
-    path: '/family-print',
-    label: 'Tithe Print',
-    icon: '📄',
-  },
-  {
-    type: 'single',
-    path: '/addopening',
-    label: 'Opening Balance',
-    icon: '💼',
-  },
-  {
-    type: 'single',
-    path: '/yearendtransfer',
-    label: 'Year End Transfer',
-    icon: '🔄',
-  },
-  {
-    type: 'single',
-    path: '/databasebk',
-    label: 'Database Backup',
-    icon: '💾',    
-  }
+  // {
+  //   type: 'header',
+  //   label: 'ACCOUNTS',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/FamilyFinance',
+  //   label: 'Family Finance',
+  //   icon: '💰',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/transactions',
+  //   label: 'Transaction',
+  //   icon: '💳',
+  // },
+  // {
+  //   type: 'header',
+  //   label: 'FINANCE SETTINGS',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/project',
+  //   label: 'Manage Other Project',
+  //   icon: '📋',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/community',
+  //   label: 'Manage Communities',
+  //   icon: '🤝',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/FinanceSettings',
+  //   label: 'Finance Settings',
+  //   icon: '⚙️',
+  // },
+  // {
+  //   type: 'header',
+  //   label: 'REPORTS',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/ReportsDashboard',
+  //   label: 'Report Dashboard',
+  //   icon: '📈',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/report',
+  //   label: 'Report Print',
+  //   icon: '🖨️',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/family-print',
+  //   label: 'Tithe Print',
+  //   icon: '📄',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/addopening',
+  //   label: 'Opening Balance',
+  //   icon: '💼',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/yearendtransfer',
+  //   label: 'Year End Transfer',
+  //   icon: '🔄',
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/databasebk',
+  //   label: 'Database Backup',
+  //   icon: '💾',    
+  // }
 ];
 
 // Super admin only menu items
 const superAdminMenuItems = [
-  {
-    type: 'header',
-    label: 'SUPER ADMIN',
-    superAdminOnly: true,
-  },  
-  {
-    type: 'single',
-    path: '/parishAnalytics',
-    label: 'Parish Analytics',
-    icon: '⛪',
-    superAdminOnly: true,
-  },
-  {
-    type: 'single',
-    path: '/mgm',
-    label: 'Admin Management',
-    icon: '👥',
-    superAdminOnly: true,
-  },
-    {
-    type: 'single',
-    path: '/database-backup',
-    label: 'Database Backup',
-    icon: '💾',
-    superAdminOnly: true,
-  }
+  // {
+  //   type: 'header',
+  //   label: 'SUPER ADMIN',
+  //   superAdminOnly: true,
+  // },  
+  // {
+  //   type: 'single',
+  //   path: '/parishAnalytics',
+  //   label: 'Parish Analytics',
+  //   icon: '⛪',
+  //   superAdminOnly: true,
+  // },
+  // {
+  //   type: 'single',
+  //   path: '/mgm',
+  //   label: 'Admin Management',
+  //   icon: '👥',
+  //   superAdminOnly: true,
+  // },
+  //   {
+  //   type: 'single',
+  //   path: '/database-backup',
+  //   label: 'Database Backup',
+  //   icon: '💾',
+  //   superAdminOnly: true,
+  // }
 ];
 
 const Sidenav = ({ color, collapsed = false }) => {

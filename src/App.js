@@ -19,7 +19,16 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ParishAnalytics from "./pages/ParishAnalytics";
 import AdminManagement from "./pages/AdminManagement"; 
 import DatabaseBackup from "./pages/DatabaseBackup"; 
+import PrintDesigner from "./pages/PrintDesigner";
+import MarriagePage from "./pages/MarriagePage";
+import MarriagePrintSetup from "./pages/MarriagePrintSetup";
+import PrintPage from "./pages/PrintPage";
 // Organization Pages
+import Diocese from "./pages/Diocese";
+import Priest from "./pages/Priest";
+import Position from "./pages/Position";
+import Congregation from "./pages/Congregation";
+import Department from "./pages/Department";
 import Forane from "./pages/Forane";
 import Parish from "./pages/Parish";
 import Koottayma from "./pages/Koottayma";
@@ -34,6 +43,7 @@ import FamilyNew1 from "./pages/FamilyNew1";
 import TransactionPage from "./pages/Transactionpage";
 import TransactionListPage from './pages/TransactionListPage';
 import Titheprint from "./pages/Titheprint";
+import Assignmentpage from "./pages/Assignmentpage";
 
 // Settings Pages
 import FinanceSettings from "./pages/FinanceSettings";
@@ -176,11 +186,19 @@ function App() {
                   <Route exact path="/profile" component={Profile} />
 
                   {/* Organization routes */}
+                   <Route exact path="/congregation" component={Congregation} />
+                         <Route exact path="/diocese" component={Diocese} />
+                         <Route exact path="/priest" component={Priest} />
+                            <Route exact path="/position" component={Position} />
+                                   <Route exact path="/department" component={Department} />
                   <Route exact path="/forane" component={Forane} />
                   <Route exact path="/parish" component={Parish} />
                   <Route exact path="/koottayma" component={Koottayma} />
                   <Route exact path="/Family" component={Family} />
-
+                  <Route exact path="/print-designer" component={PrintDesigner} />
+   <Route exact path="/printPage" component={PrintPage} />
+   <Route exact path="/marriagePage" component={MarriagePage} />
+  <Route exact path="/marriagePrintSetup" component={MarriagePrintSetup} />
                   {/* Finance routes */}
                   <Route exact path="/PersonManagement" component={PersonManagement} />
                   <Route exact path="/FamilyFinanace" component={FamilyFinanace} />
@@ -190,6 +208,7 @@ function App() {
                   <Route exact path="/transactions" component={TransactionPage} />
                   <Route exact path="/Titheprint" component={Titheprint} />
                   <Route exact path="/FamilyNewjune14" component={FamilyNew} />
+                  <Route exact path="/Assignment" component={Assignmentpage} />
 
                   {/* Settings routes */}
                   <Route exact path="/FinanceSettings" component={FinanceSettings} />
