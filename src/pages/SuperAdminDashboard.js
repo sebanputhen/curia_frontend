@@ -133,15 +133,15 @@ const SuperAdminDashboard = () => {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Super Admin Dashboard
+          Welcome Diocese Of Kanjirapally
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        {/* <Typography variant="body1" color="text.secondary">
           Analytics and Insights for Transaction Management
-        </Typography>
+        </Typography> */}
       </Box>
 
       {/* Date Range Selection */}
-      <Card sx={{ mb: 4, boxShadow: 2 }}>
+      {/* <Card sx={{ mb: 4, boxShadow: 2 }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             Select Date Range
@@ -179,17 +179,17 @@ const SuperAdminDashboard = () => {
             </Button>
           </Box>
         </CardContent>
-      </Card>
+      </Card> */}
 
-      {/* Error Alert */}
+      {/* Error Alert
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
-      )}
+      )} */}
 
       {/* Statistics Cards */}
-      {uniqueFamiliesData && (
+      {/* {uniqueFamiliesData && (
         <>
           <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
             Overview Statistics
@@ -227,10 +227,10 @@ const SuperAdminDashboard = () => {
             </Grid>
           </Grid>
         </>
-      )}
+      )} */}
 
       {/* Families Details Table */}
-      {familiesDetails.length > 0 && (
+      {/* {familiesDetails.length > 0 && (
         <Card sx={{ boxShadow: 2 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -318,17 +318,17 @@ const SuperAdminDashboard = () => {
             </TableContainer>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Loading State */}
-      {loading && !uniqueFamiliesData && (
+      {/* {loading && !uniqueFamiliesData && (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
           <CircularProgress size={60} />
         </Box>
-      )}
+      )} */}
 
       {/* No Data State */}
-      {!loading && !uniqueFamiliesData && !error && (
+      {/* {!loading && !uniqueFamiliesData && !error && (
         <Card sx={{ boxShadow: 2 }}>
           <CardContent>
             <Box sx={{ textAlign: 'center', py: 6 }}>
@@ -348,7 +348,7 @@ const SuperAdminDashboard = () => {
             </Box>
           </CardContent>
         </Card>
-      )}
+      )} */}
     </Box>
   );
 };
