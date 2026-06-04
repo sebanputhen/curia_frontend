@@ -250,22 +250,39 @@ const MarriagePrintSetup = ({ open, onClose, onSettingsSaved }) => {
   const fileInputRef = useRef(null);
 
   // Fetch from DB on open
-  useEffect(() => {
-    if (!open) return;
-    setTabIndex(0); setSaved(false); setError("");
-    setLoading(true);
-    axiosInstance.get(API)
-      .then((res) => {
-        // Controller returns the doc directly (GET returns settings doc)
-        setSettings({ ...DEFAULT_PRINT_SETTINGS, ...(res.data || {}) });
-      })
-      .catch((err) => {
-        if (err?.response?.status === 404) setSettings({ ...DEFAULT_PRINT_SETTINGS });
-        else setError("Could not load print settings from server.");
-      })
-      .finally(() => setLoading(false));
-  }, [open]);
+  // useEffect(() => {
+  //   if (!open) return;
+  //   setTabIndex(0); setSaved(false); setError("");
+  //   setLoading(true);
+  //   axiosInstance.get(API)
+  //     .then((res) => {
+  //       // Controller returns the doc directly (GET returns settings doc)
+  //       setSettings({ ...DEFAULT_PRINT_SETTINGS, ...(res.data || {}) });
+  //     })
+  //     .catch((err) => {
+  //       if (err?.response?.status === 404) setSettings({ ...DEFAULT_PRINT_SETTINGS });
+  //       else setError("Could not load print settings from server.");
+  //     })
+  //     .finally(() => setLoading(false));
+  // }, [open]);
+// AFTER:
+const [logoLoaded, setLogoLoaded] = useState(false);
 
+useEffect(() => {
+  if (!open) return;
+  setTabIndex(0); setSaved(false); setError(""); setLogoLoaded(false);
+  setLoading(true);
+  axiosInstance.get(API)
+    .then((res) => {
+      // logoDataUrl is excluded from this response now
+      setSettings({ ...DEFAULT_PRINT_SETTINGS, ...(res.data || {}), logoDataUrl: "" });
+    })
+    .catch((err) => {
+      if (err?.response?.status === 404) setSettings({ ...DEFAULT_PRINT_SETTINGS });
+      else setError("Could not load print settings from server.");
+    })
+    .finally(() => setLoading(false));
+}, [open]);
   // Stable single-key updater — panels won't remount on change
   const upd = useCallback((key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -351,7 +368,20 @@ const MarriagePrintSetup = ({ open, onClose, onSettingsSaved }) => {
         </Box>
       </DialogTitle>
 
-      <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)}
+      <Tabs
+  value={tabIndex}
+  onChange={(_, v) => {
+    setTabIndex(v);
+    // Lazy-load logo only when Header tab (index 0) is opened for first time
+    if (v === 0 && !logoLoaded) {
+      axiosInstance.get(`${API}/logo`)
+        .then((res) => {
+          setSettings((prev) => ({ ...prev, logoDataUrl: res.data.logoDataUrl || "" }));
+          setLogoLoaded(true);
+        })
+        .catch(() => {});
+    }
+  }}
         sx={{ borderBottom: "1px solid #CCFBF1", px: 2, "& .MuiTab-root": { textTransform: "none", fontFamily: "'Georgia', serif", fontWeight: 600, fontSize: "0.82rem", minWidth: 0, px: 2 }, "& .Mui-selected": { color: "#0F766E !important" }, "& .MuiTabs-indicator": { backgroundColor: "#0F766E" } }}>
         <Tab label="🏛  Header" />
         <Tab label="📋  Sections" />
