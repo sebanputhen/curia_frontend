@@ -10,7 +10,7 @@
 // src/axiosConfig.js
 import axios from 'axios';
 import { getAuthToken } from './utils/auth';
-const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';//'http://jeevankply.com:5000';//http://jeevankply.com:5000';
+const baseURL = process.env.REACT_APP_API_URL || 'https://curia-backend.vercel.app';//'http://localhost:5000';//'http://jeevankply.com:5000';//http://jeevankply.com:5000';
 const axiosInstance = axios.create({
   baseURL: baseURL,//'https://jeevan-backend.vercel.app',  //'https://jeevan-backend.vercel.app','http://localhost:5000',''http://192.168.1.11:5000';
   withCredentials: true,
