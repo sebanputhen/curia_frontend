@@ -217,16 +217,17 @@ const baseMenuItems = [
     label: 'Manage Priest',
     icon: '👤',
   },
-  // {
-  //   type: 'header',
-  //   label: 'ACCOUNTS',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/FamilyFinance',
-  //   label: 'Family Finance',
-  //   icon: '💰',
-  // },
+  
+  {
+    type: 'header',
+    label: 'Certificates',
+  },
+  {
+    type: 'single',
+    path: '/marriagePage',
+    label: 'Marriage',
+    icon: '💰',
+  },
   // {
   //   type: 'single',
   //   path: '/transactions',
