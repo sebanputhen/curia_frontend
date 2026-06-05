@@ -136,7 +136,7 @@ const HeaderPanel = ({ settings, upd, fileInputRef, onLogoUpload, logoUploading 
         <Box sx={{ position: "relative" }}>
           <Box
             component="img"
-            src={settings.logoUrl}
+            src={`${settings.logoUrl}${settings.logoUrl?.includes("raw.githubusercontent") ? `?v=${Date.now()}` : ""}`}
             sx={{ width: 64, height: 64, objectFit: "contain", borderRadius: 2, border: "1px solid #CCFBF1", display: "block" }}
           />
           <IconButton size="small"
@@ -308,9 +308,8 @@ const MarriagePrintSetup = ({ open, onClose, onSettingsSaved }) => {
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = ""; // reset so same file can be re-selected
+    e.target.value = "";
 
-    // Show instant local preview while uploading
     const previewUrl = URL.createObjectURL(file);
     setSettings((prev) => ({ ...prev, logoUrl: previewUrl, showLogo: true }));
     setSaved(false);
@@ -322,10 +321,10 @@ const MarriagePrintSetup = ({ open, onClose, onSettingsSaved }) => {
       const res = await axiosInstance.post(UPLOAD_API, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      // Replace object URL with the real server path
       const serverUrl = res.data?.logoUrl;
       if (serverUrl) {
-        setSettings((prev) => ({ ...prev, logoUrl: serverUrl }));
+        // Store clean URL in state (no cache-buster — saved cleanly to DB)
+        setSettings((prev) => ({ ...prev, logoUrl: serverUrl, showLogo: true }));
       }
     } catch {
       setError("Logo upload failed. Please try again.");

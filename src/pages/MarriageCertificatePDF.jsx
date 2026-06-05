@@ -885,14 +885,44 @@ export const THEMES = {
   letterhead:   { label:"Theme 3", preview:["#3C1464","#C89600","#FAF7FF"], desc:"",        render:renderLetterhead   },
 };
 
+// ─── FETCH LOGO AS BASE64 (works with GitHub raw URLs) ───────────────────────
+const fetchImageAsBase64 = async (url) => {
+  if (!url) return null;
+  if (url.startsWith("data:")) return url; // already base64, use as-is
+  try {
+    const res  = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch { return null; }
+};
 // ─── EXPORT FUNCTION ──────────────────────────────────────────────────────────
-export const exportMarriagePDF = (record, {
+// export const exportMarriagePDF = (record, {
+//   pageSize="", vicarName="", theme="", printSettings={},
+// }={}) => {
+//   const finalPageSize = pageSize      || printSettings.pageSize  || "a4portrait";
+//   const finalTheme    = theme         || printSettings.theme     || "classic";
+//   const finalVicar    = vicarName     || printSettings.vicarName || "";
+//   const effectiveSettings = { ...printSettings, pageSize:finalPageSize, theme:finalTheme, vicarName:finalVicar };
+//   const cfg    = PAGE_SIZES[finalPageSize] || PAGE_SIZES.a4portrait;
+export const exportMarriagePDF = async (record, {
   pageSize="", vicarName="", theme="", printSettings={},
 }={}) => {
   const finalPageSize = pageSize      || printSettings.pageSize  || "a4portrait";
   const finalTheme    = theme         || printSettings.theme     || "classic";
   const finalVicar    = vicarName     || printSettings.vicarName || "";
   const effectiveSettings = { ...printSettings, pageSize:finalPageSize, theme:finalTheme, vicarName:finalVicar };
+
+  // Fetch logo from GitHub URL → base64 so jsPDF can embed it
+  if (effectiveSettings.showLogo && effectiveSettings.logoUrl && !effectiveSettings.logoDataUrl) {
+    const base64 = await fetchImageAsBase64(effectiveSettings.logoUrl);
+    if (base64) effectiveSettings.logoDataUrl = base64;
+  }
+
   const cfg    = PAGE_SIZES[finalPageSize] || PAGE_SIZES.a4portrait;
   const doc    = new jsPDF({ ...cfg.jsPDFOpts, unit:"mm" });
   const render = THEMES[finalTheme]?.render || renderClassic;
@@ -919,7 +949,8 @@ export const MarriagePDFButton = ({ record, printSettings={} }) => {
   ];
 
   const handleSelectSize=(key)=>{ setAnchor(null); setPendingSize(key); setVicarInput(record.vicarName||printSettings.vicarName||""); setSelTheme(printSettings.theme||"classic"); setDialogOpen(true); };
-  const handleGenerate=()=>{ setDialogOpen(false); exportMarriagePDF(record,{pageSize:pendingSize,theme:selTheme,vicarName:vicarInput.trim(),printSettings}); };
+//   const handleGenerate=()=>{ setDialogOpen(false); exportMarriagePDF(record,{pageSize:pendingSize,theme:selTheme,vicarName:vicarInput.trim(),printSettings}); };
+  const handleGenerate= async ()=>{ setDialogOpen(false); await exportMarriagePDF(record,{pageSize:pendingSize,theme:selTheme,vicarName:vicarInput.trim(),printSettings}); };
 
   return (
     <>
