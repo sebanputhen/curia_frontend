@@ -29,7 +29,7 @@ import {
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API        = "/print-settings/marriage";
-const UPLOAD_API = "/upload/logo/marriage";
+const UPLOAD_API = "/print-settings/logo/marriage";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 export const DEFAULT_PRINT_SETTINGS = {
