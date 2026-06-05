@@ -217,6 +217,12 @@ const baseMenuItems = [
     label: 'Manage Priest',
     icon: '👤',
   },
+   {
+    type: 'single',
+    path: '/Assignmentpage',
+    label: 'Assign',
+    icon: '👤',
+  },
   
   {
     type: 'header',
