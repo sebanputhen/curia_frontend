@@ -5,6 +5,7 @@
  *   GET    /print-settings/marriage          → { collectionName, ...settings }
  *   PUT    /print-settings/marriage          → { message, settings }
  *   DELETE /print-settings/marriage          → { message }  (reset)
+ *   POST   /upload/logo/marriage             → { logoUrl }  (file upload)
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -23,16 +24,18 @@ import {
   Image as ImageIcon,
   Delete as DeleteIcon,
   CloudSync as SyncIcon,
+  CloudUpload as UploadIcon,
 } from "@mui/icons-material";
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-const API = "/print-settings/marriage";
+const API        = "/print-settings/marriage";
+const UPLOAD_API = "/upload/logo/marriage";
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 export const DEFAULT_PRINT_SETTINGS = {
   headerLine1: "", headerLine2: "", headerLine3: "", headerLine4: "",
   churchNameSize: "large",
-  showLogo: false, logoDataUrl: "",
+  showLogo: false, logoUrl: "",          // ← logoUrl (file path), not base64
   showHeader: true, showChurchName: true, showSubtitle: true,
   showCertNumbers: true, showDatePlace: true,
   showGroom: true, showBride: true,
@@ -45,12 +48,12 @@ export const DEFAULT_PRINT_SETTINGS = {
 // ─── Shared sx ────────────────────────────────────────────────────────────────
 const fieldSx = {
   "& .MuiOutlinedInput-root": {
-    borderRadius: 2, fontFamily: "'Georgia', serif",
+    borderRadius: 2, fontFamily: "Inter, system-ui, sans-serif",
     "& fieldset": { borderColor: "#CCFBF1" },
     "&:hover fieldset": { borderColor: "#14B8A6" },
     "&.Mui-focused fieldset": { borderColor: "#0F766E" },
   },
-  "& .MuiInputLabel-root": { fontFamily: "'Georgia', serif" },
+  "& .MuiInputLabel-root": { fontFamily: "Inter, system-ui, sans-serif" },
 };
 
 const switchSx = {
@@ -62,15 +65,14 @@ const switchSx = {
 const SettingRow = ({ label, hint, children }) => (
   <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", py: 1.2, borderBottom: "1px solid #F0FDFA" }}>
     <Box sx={{ flex: 1, pr: 2 }}>
-      <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#134E4A", fontFamily: "'Georgia', serif" }}>{label}</Typography>
+      <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#134E4A", fontFamily: "Inter, system-ui, sans-serif" }}>{label}</Typography>
       {hint && <Typography sx={{ fontSize: "0.71rem", color: "#64748B", mt: 0.2 }}>{hint}</Typography>}
     </Box>
     <Box sx={{ flexShrink: 0 }}>{children}</Box>
   </Box>
 );
 
-// ─── SectionToggle — OUTSIDE all components ───────────────────────────────────
-// Must be at module level — if defined inside SectionsPanel it remounts on every render
+// ─── SectionToggle ────────────────────────────────────────────────────────────
 const SectionToggle = ({ label, hint, k, settings, upd }) => (
   <SettingRow label={label} hint={hint}>
     <Switch
@@ -82,7 +84,7 @@ const SectionToggle = ({ label, hint, k, settings, upd }) => (
 );
 
 // ─── PANEL 0: Header ──────────────────────────────────────────────────────────
-const HeaderPanel = ({ settings, upd, fileInputRef, onLogoUpload }) => (
+const HeaderPanel = ({ settings, upd, fileInputRef, onLogoUpload, logoUploading }) => (
   <Box>
     <Alert severity="info" sx={{ mb: 2, fontSize: "0.78rem", borderRadius: 2 }}>
       <strong>Line 1</strong> defaults to the record's <em>Place of Marriage</em> if left blank.
@@ -105,7 +107,7 @@ const HeaderPanel = ({ settings, upd, fileInputRef, onLogoUpload }) => (
       ))}
 
       <Grid item xs={12}>
-        <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "#134E4A", mb: 1, fontFamily: "'Georgia', serif" }}>
+        <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "#134E4A", mb: 1, fontFamily: "Inter, system-ui, sans-serif" }}>
           Church Name Font Size
         </Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
@@ -123,43 +125,69 @@ const HeaderPanel = ({ settings, upd, fileInputRef, onLogoUpload }) => (
 
     <Divider sx={{ borderColor: "#CCFBF1", my: 2 }} />
 
-    <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: "#134E4A", mb: 1.5, fontFamily: "'Georgia', serif" }}>
+    <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: "#134E4A", mb: 1.5, fontFamily: "Inter, system-ui, sans-serif" }}>
       Church Logo
     </Typography>
+
     <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start", flexWrap: "wrap" }}>
-      {settings.logoDataUrl ? (
+
+      {/* Preview box */}
+      {settings.logoUrl ? (
         <Box sx={{ position: "relative" }}>
-          <Box component="img" src={settings.logoDataUrl}
-            sx={{ width: 64, height: 64, objectFit: "contain", borderRadius: 2, border: "1px solid #CCFBF1", display: "block" }} />
+          <Box
+            component="img"
+            src={settings.logoUrl}
+            sx={{ width: 64, height: 64, objectFit: "contain", borderRadius: 2, border: "1px solid #CCFBF1", display: "block" }}
+          />
           <IconButton size="small"
-            onClick={() => { upd("logoDataUrl", ""); upd("showLogo", false); }}
+            onClick={() => { upd("logoUrl", ""); upd("showLogo", false); }}
             sx={{ position: "absolute", top: -8, right: -8, backgroundColor: "#FEE2E2", width: 22, height: 22 }}>
             <DeleteIcon sx={{ fontSize: 13, color: "#DC2626" }} />
           </IconButton>
         </Box>
       ) : (
         <Box sx={{ width: 64, height: 64, borderRadius: 2, border: "2px dashed #CCFBF1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <ImageIcon sx={{ color: "#CBD5E1", fontSize: 28 }} />
+          {logoUploading
+            ? <CircularProgress size={22} sx={{ color: "#14B8A6" }} />
+            : <ImageIcon sx={{ color: "#CBD5E1", fontSize: 28 }} />}
         </Box>
       )}
+
       <Box>
-        <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/gif"
-          style={{ display: "none" }} onChange={onLogoUpload} />
-        <Button variant="outlined" size="small" onClick={() => fileInputRef.current?.click()}
-          sx={{ borderRadius: 8, textTransform: "none", borderColor: "#14B8A6", color: "#0F766E", mb: 1, display: "block" }}>
-          {settings.logoDataUrl ? "Replace Logo" : "Upload Logo"}
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          style={{ display: "none" }}
+          onChange={onLogoUpload}
+        />
+
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={logoUploading ? <CircularProgress size={13} /> : <UploadIcon sx={{ fontSize: 15 }} />}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={logoUploading}
+          sx={{ borderRadius: 8, textTransform: "none", borderColor: "#14B8A6", color: "#0F766E", mb: 1, display: "block" }}
+        >
+          {logoUploading ? "Uploading…" : settings.logoUrl ? "Replace Logo" : "Upload Logo"}
         </Button>
+
         <FormControlLabel
           control={
             <Switch
-              checked={!!settings.showLogo && !!settings.logoDataUrl}
+              checked={!!settings.showLogo && !!settings.logoUrl}
               onChange={(e) => upd("showLogo", e.target.checked)}
-              disabled={!settings.logoDataUrl} size="small" sx={switchSx}
+              disabled={!settings.logoUrl}
+              size="small" sx={switchSx}
             />
           }
           label={<Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Show logo on PDF</Typography>}
         />
-        <Typography sx={{ fontSize: "0.7rem", color: "#94A3B8", mt: 0.5 }}>PNG or JPEG. Placed top-left.</Typography>
+        <Typography sx={{ fontSize: "0.7rem", color: "#94A3B8", mt: 0.5 }}>
+          PNG, JPEG, or WebP · max 2 MB · placed top-left
+        </Typography>
       </Box>
     </Box>
   </Box>
@@ -212,7 +240,7 @@ const MarginsPanel = ({ settings, upd }) => (
     {[["marginTop","Top Margin",5,40],["marginLeft","Left Margin",5,40],["marginRight","Right Margin",5,40]].map(([key, label, min, max]) => (
       <Box key={key} sx={{ mb: 3 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-          <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#134E4A", fontFamily: "'Georgia', serif" }}>{label}</Typography>
+          <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#134E4A", fontFamily: "Inter, system-ui, sans-serif" }}>{label}</Typography>
           <Chip label={`${settings[key]} mm`} size="small" sx={{ backgroundColor: "#CCFBF1", color: "#0F766E", fontWeight: 700 }} />
         </Box>
         <Slider value={settings[key]} min={min} max={max} step={1}
@@ -224,7 +252,7 @@ const MarginsPanel = ({ settings, upd }) => (
 
     <Divider sx={{ borderColor: "#CCFBF1", my: 2 }} />
 
-    <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#134E4A", mb: 0.5, fontFamily: "'Georgia', serif" }}>
+    <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#134E4A", mb: 0.5, fontFamily: "Inter, system-ui, sans-serif" }}>
       Default Vicar / Minister Name
     </Typography>
     <Typography sx={{ fontSize: "0.73rem", color: "#64748B", mb: 1.5 }}>
@@ -241,63 +269,85 @@ const MarginsPanel = ({ settings, upd }) => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const MarriagePrintSetup = ({ open, onClose, onSettingsSaved }) => {
-  const [settings, setSettings] = useState({ ...DEFAULT_PRINT_SETTINGS });
-  const [loading,  setLoading]  = useState(false);
-  const [saving,   setSaving]   = useState(false);
-  const [saved,    setSaved]    = useState(false);
-  const [error,    setError]    = useState("");
-  const [tabIndex, setTabIndex] = useState(0);
+  const [settings,      setSettings]      = useState({ ...DEFAULT_PRINT_SETTINGS });
+  const [loading,       setLoading]       = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [error,         setError]         = useState("");
+  const [tabIndex,      setTabIndex]      = useState(0);
   const fileInputRef = useRef(null);
 
   // Fetch from DB on open
-  // useEffect(() => {
-  //   if (!open) return;
-  //   setTabIndex(0); setSaved(false); setError("");
-  //   setLoading(true);
-  //   axiosInstance.get(API)
-  //     .then((res) => {
-  //       // Controller returns the doc directly (GET returns settings doc)
-  //       setSettings({ ...DEFAULT_PRINT_SETTINGS, ...(res.data || {}) });
-  //     })
-  //     .catch((err) => {
-  //       if (err?.response?.status === 404) setSettings({ ...DEFAULT_PRINT_SETTINGS });
-  //       else setError("Could not load print settings from server.");
-  //     })
-  //     .finally(() => setLoading(false));
-  // }, [open]);
-// AFTER:
-const [logoLoaded, setLogoLoaded] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setTabIndex(0); setSaved(false); setError("");
+    setLoading(true);
+    axiosInstance.get(API)
+      .then((res) => {
+        const data = res.data || {};
+        // Migrate legacy logoDataUrl → logoUrl (if old records exist)
+        if (data.logoDataUrl && !data.logoUrl) data.logoUrl = data.logoDataUrl;
+        delete data.logoDataUrl;
+        setSettings({ ...DEFAULT_PRINT_SETTINGS, ...data });
+      })
+      .catch((err) => {
+        if (err?.response?.status === 404) setSettings({ ...DEFAULT_PRINT_SETTINGS });
+        else setError("Could not load print settings from server.");
+      })
+      .finally(() => setLoading(false));
+  }, [open]);
 
-useEffect(() => {
-  if (!open) return;
-  setTabIndex(0); setSaved(false); setError(""); setLogoLoaded(false);
-  setLoading(true);
-  axiosInstance.get(API)
-    .then((res) => {
-      // logoDataUrl is excluded from this response now
-      setSettings({ ...DEFAULT_PRINT_SETTINGS, ...(res.data || {}), logoDataUrl: "" });
-    })
-    .catch((err) => {
-      if (err?.response?.status === 404) setSettings({ ...DEFAULT_PRINT_SETTINGS });
-      else setError("Could not load print settings from server.");
-    })
-    .finally(() => setLoading(false));
-}, [open]);
-  // Stable single-key updater — panels won't remount on change
+  // Stable single-key updater
   const upd = useCallback((key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   }, []);
 
-  // Save — controller PUT returns { message, settings }
+  // ── Logo upload: send file to server, get back a URL ──────────────────────
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ""; // reset so same file can be re-selected
+
+    // Show instant local preview while uploading
+    const previewUrl = URL.createObjectURL(file);
+    setSettings((prev) => ({ ...prev, logoUrl: previewUrl, showLogo: true }));
+    setSaved(false);
+
+    setLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+      const res = await axiosInstance.post(UPLOAD_API, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      // Replace object URL with the real server path
+      const serverUrl = res.data?.logoUrl;
+      if (serverUrl) {
+        setSettings((prev) => ({ ...prev, logoUrl: serverUrl }));
+      }
+    } catch {
+      setError("Logo upload failed. Please try again.");
+      setSettings((prev) => ({ ...prev, logoUrl: "", showLogo: false }));
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  // ── Save settings ─────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true); setError("");
     try {
-      const res = await axiosInstance.put(API, settings);
-      // Extract settings from controller response shape: { message, settings }
-      const saved = { ...DEFAULT_PRINT_SETTINGS, ...(res.data?.settings || res.data || settings) };
-      setSettings(saved);
-      onSettingsSaved?.(saved);
+      // Never save base64 or blob URLs to DB
+      const payload = { ...settings };
+      if (payload.logoUrl?.startsWith("blob:")) delete payload.logoUrl;
+      delete payload.logoDataUrl; // remove legacy field if present
+
+      const res = await axiosInstance.put(API, payload);
+      const savedData = { ...DEFAULT_PRINT_SETTINGS, ...(res.data?.settings || res.data || payload) };
+      setSettings(savedData);
+      onSettingsSaved?.(savedData);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
@@ -307,13 +357,12 @@ useEffect(() => {
     }
   };
 
-  // Reset — controller uses DELETE, not POST /reset
+  // ── Reset ─────────────────────────────────────────────────────────────────
   const handleReset = async () => {
     if (!window.confirm("Reset all print settings to defaults?")) return;
     setSaving(true); setError("");
     try {
       await axiosInstance.delete(API);
-      // After delete, doc is gone — use defaults locally
       const def = { ...DEFAULT_PRINT_SETTINGS };
       setSettings(def);
       onSettingsSaved?.(def);
@@ -326,18 +375,6 @@ useEffect(() => {
     }
   };
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setSettings((prev) => ({ ...prev, logoDataUrl: ev.target.result, showLogo: true }));
-      setSaved(false);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
       PaperProps={{ elevation: 0, sx: { borderRadius: "16px", border: "1px solid #CCFBF1", boxShadow: "0 16px 48px rgba(15,118,110,0.15)" } }}>
@@ -348,7 +385,7 @@ useEffect(() => {
             <SettingsIcon sx={{ color: "white", fontSize: 19 }} />
           </Box>
           <Box>
-            <Typography sx={{ fontWeight: 700, fontFamily: "'Georgia', serif", color: "#134E4A", fontSize: "0.95rem" }}>
+            <Typography sx={{ fontWeight: 700, fontFamily: "Inter, system-ui, sans-serif", color: "#134E4A", fontSize: "0.95rem" }}>
               Print Setup
             </Typography>
             <Typography sx={{ fontSize: "0.71rem", color: "#64748B" }}>
@@ -357,7 +394,11 @@ useEffect(() => {
           </Box>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {loading && <CircularProgress size={16} sx={{ color: "#0F766E" }} />}
+          {(loading || logoUploading) && (
+            <Tooltip title={logoUploading ? "Uploading logo…" : "Loading…"}>
+              <CircularProgress size={16} sx={{ color: "#0F766E" }} />
+            </Tooltip>
+          )}
           {saved && (
             <Chip icon={<SavedIcon sx={{ fontSize: 14 }} />} label="Saved to DB"
               size="small" sx={{ backgroundColor: "#DCFCE7", color: "#15803D", fontWeight: 700 }} />
@@ -368,21 +409,8 @@ useEffect(() => {
         </Box>
       </DialogTitle>
 
-      <Tabs
-  value={tabIndex}
-  onChange={(_, v) => {
-    setTabIndex(v);
-    // Lazy-load logo only when Header tab (index 0) is opened for first time
-    if (v === 0 && !logoLoaded) {
-      axiosInstance.get(`${API}/logo`)
-        .then((res) => {
-          setSettings((prev) => ({ ...prev, logoDataUrl: res.data.logoDataUrl || "" }));
-          setLogoLoaded(true);
-        })
-        .catch(() => {});
-    }
-  }}
-        sx={{ borderBottom: "1px solid #CCFBF1", px: 2, "& .MuiTab-root": { textTransform: "none", fontFamily: "'Georgia', serif", fontWeight: 600, fontSize: "0.82rem", minWidth: 0, px: 2 }, "& .Mui-selected": { color: "#0F766E !important" }, "& .MuiTabs-indicator": { backgroundColor: "#0F766E" } }}>
+      <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)}
+        sx={{ borderBottom: "1px solid #CCFBF1", px: 2, "& .MuiTab-root": { textTransform: "none", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600, fontSize: "0.82rem", minWidth: 0, px: 2 }, "& .Mui-selected": { color: "#0F766E !important" }, "& .MuiTabs-indicator": { backgroundColor: "#0F766E" } }}>
         <Tab label="🏛  Header" />
         <Tab label="📋  Sections" />
         <Tab label="📐  Margins" />
@@ -396,9 +424,16 @@ useEffect(() => {
         ) : (
           <>
             {error && (
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: "0.78rem" }}>{error}</Alert>
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: "0.78rem" }} onClose={() => setError("")}>{error}</Alert>
             )}
-            {tabIndex === 0 && <HeaderPanel  settings={settings} upd={upd} fileInputRef={fileInputRef} onLogoUpload={handleLogoUpload} />}
+            {tabIndex === 0 && (
+              <HeaderPanel
+                settings={settings} upd={upd}
+                fileInputRef={fileInputRef}
+                onLogoUpload={handleLogoUpload}
+                logoUploading={logoUploading}
+              />
+            )}
             {tabIndex === 1 && <SectionsPanel settings={settings} upd={upd} />}
             {tabIndex === 2 && <MarginsPanel  settings={settings} upd={upd} />}
           </>
@@ -407,7 +442,8 @@ useEffect(() => {
 
       <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5, gap: 1, borderTop: "1px solid #CCFBF1" }}>
         <Tooltip title="Delete saved settings and reset to defaults">
-          <Button variant="outlined" startIcon={<ResetIcon />} onClick={handleReset} disabled={saving || loading}
+          <Button variant="outlined" startIcon={<ResetIcon />} onClick={handleReset}
+            disabled={saving || loading || logoUploading}
             sx={{ borderRadius: 8, textTransform: "none", fontWeight: 600, borderColor: "#FCA5A5", color: "#DC2626" }}>
             Reset
           </Button>
@@ -417,7 +453,8 @@ useEffect(() => {
           sx={{ borderRadius: 8, textTransform: "none", fontWeight: 600, borderColor: "#CBD5E1", color: "#64748B" }}>
           Close
         </Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving || loading}
+        <Button variant="contained" onClick={handleSave}
+          disabled={saving || loading || logoUploading}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <SyncIcon />}
           sx={{ borderRadius: 8, textTransform: "none", fontWeight: 600, background: "linear-gradient(to right, #14B8A6, #0F766E)", "&:hover": { background: "linear-gradient(to right, #0F766E, #115E59)" } }}>
           {saving ? "Saving…" : "Save to Database"}
