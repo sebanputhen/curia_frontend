@@ -158,57 +158,15 @@ const baseMenuItems = [
   },
   {
     type: 'single',
-    path: '/diocese',
-    label: 'Manage Diocese',
+    path: '/organization',
+    label: 'Manage Organization',
     icon: '🏛️',
   },
   {
     type: 'single',
-    path: '/forane',
-    label: 'Manage Forane',
-    icon: '🏛️',
-  },
-  {
-    type: 'single',
-    path: '/Parish',
-    label: 'Manage Parish',
-    icon: '⛪',
-  },
-   {
-    type: 'single',
-    path: '/congregation',
-    label: 'Manage Congregation',
-    icon: '🏛️',
-  },
-   {
-    type: 'single',
-    path: '/department',
-    label: 'Manage Departments',
-    icon: '🏛️',
-  },
-   {
-    type: 'single',
-    path: '/position',
-    label: 'Manage Position',
-    icon: '🏛️',
-  },
-  {
-    type: 'single',
-    path: '/koottayma',
-    label: 'Manage Koottayma',
-    icon: '👥',
-  },
-  {
-    type: 'single',
-    path: '/Family',
-    label: 'Manage Family',
-    icon: '👨‍👩‍👦',
-  },
-  {
-    type: 'single',
-    path: '/PersonManagement',
-    label: 'Manage Person',
-    icon: '👤',
+    path: '/narration',
+    label: 'Manage Narration',
+    icon: '📝',
   },
   
   {
@@ -217,91 +175,40 @@ const baseMenuItems = [
     label: 'Manage Priest',
     icon: '👤',
   },
-   {
-    type: 'single',
-    path: '/Assignmentpage',
-    label: 'Assign',
-    icon: '👤',
-  },
-  
   {
     type: 'header',
-    label: 'Certificates',
+    label: 'DONATIONS',
   },
   {
     type: 'single',
-    path: '/marriagePage',
-    label: 'Marriage',
+    path: '/donationpage',
+    label: 'Donation Entry',
     icon: '💰',
   },
-  // {
-  //   type: 'single',
-  //   path: '/transactions',
-  //   label: 'Transaction',
-  //   icon: '💳',
-  // },
-  // {
-  //   type: 'header',
-  //   label: 'FINANCE SETTINGS',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/project',
-  //   label: 'Manage Other Project',
-  //   icon: '📋',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/community',
-  //   label: 'Manage Communities',
-  //   icon: '🤝',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/FinanceSettings',
-  //   label: 'Finance Settings',
-  //   icon: '⚙️',
-  // },
-  // {
-  //   type: 'header',
-  //   label: 'REPORTS',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/ReportsDashboard',
-  //   label: 'Report Dashboard',
-  //   icon: '📈',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/report',
-  //   label: 'Report Print',
-  //   icon: '🖨️',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/family-print',
-  //   label: 'Tithe Print',
-  //   icon: '📄',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/addopening',
-  //   label: 'Opening Balance',
-  //   icon: '💼',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/yearendtransfer',
-  //   label: 'Year End Transfer',
-  //   icon: '🔄',
-  // },
-  // {
-  //   type: 'single',
-  //   path: '/databasebk',
-  //   label: 'Database Backup',
-  //   icon: '💾',    
-  // }
+  {
+    type: 'header',
+    label: 'REPORTS',
+  },
+  {
+    type: 'single',
+    path: '/donationreport',
+    label: 'Donation Report',
+    icon: '📈',
+  },
+  {
+    type: 'single',
+    path: '/organizationreport',
+    label: 'Organization Report',
+    icon: '🏢',
+  },
+  {
+    type: 'single',
+    path: '/priestledger',
+    label: 'Priest Ledger',
+    icon: '📒',
+  },
+ 
+ 
 ];
 
 // Super admin only menu items

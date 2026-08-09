@@ -51,7 +51,8 @@ import CommunitySettings from "./pages/communitysettings";
 import OtherProjectSettings from "./pages/otherprojectsettings";
 import ParishAllocSettings from "./pages/ParishallocSettings";
 import ParishAllocSettings1 from "./pages/ParishallocSettings1";
-
+import organization from "./pages/Organization";
+import narration from "./pages/Narration";
 // Other Pages
 import MoveFamily from "./pages/movefamily";
 import Community from "./pages/community";
@@ -65,6 +66,11 @@ import logout from './pages/logout';
 import AuditDashboard from './pages/AuditDashboard';
 import AdvancedFilterPage from './pages/AdvancedFilterPage';
 import UnifiedDataFilter from './pages/UnifiedDataFilter';
+import Donationpage from './pages/Donationpage';
+import DonationReport from './pages/DonationReport';
+import Organizationreport from './pages/Organizationreport'; 
+import Curiadashboard from './pages/Curiadashboard';
+import Priestledger from './pages/Priestledger';
 import Databasebk from "./pages/Databasebk"; 
 // Styles
 import "antd/dist/antd.css";
@@ -146,7 +152,7 @@ function App() {
             <Route exact path="/">
               {isAuthenticated() ? (
                 isSuperAdmin() ? (
-                  <Redirect to="/super-admin" />
+                  <Redirect to="/home" />
                 ) : (
                   <Redirect to="/home" />
                 )
@@ -159,7 +165,7 @@ function App() {
             <Route exact path="/login">
               {isAuthenticated() ? (
                 isSuperAdmin() ? (
-                  <Redirect to="/super-admin" />
+                  <Redirect to="/home" />
                 ) : (
                   <Redirect to="/home" />
                 )
@@ -196,9 +202,15 @@ function App() {
                   <Route exact path="/koottayma" component={Koottayma} />
                   <Route exact path="/Family" component={Family} />
                   <Route exact path="/print-designer" component={PrintDesigner} />
-   <Route exact path="/printPage" component={PrintPage} />
-   <Route exact path="/marriagePage" component={MarriagePage} />
-  <Route exact path="/marriagePrintSetup" component={MarriagePrintSetup} />
+                  <Route exact path="/printPage" component={PrintPage} />
+                  <Route exact path="/marriagePage" component={MarriagePage} />
+                  <Route exact path="/organization" component={organization} />
+                  <Route exact path="/narration" component={narration} />
+                  <Route exact path="/marriagePrintSetup" component={MarriagePrintSetup} />
+                  <Route exact path="/donationReport" component={DonationReport} />
+                  <Route exact path="/priestledger" component={Priestledger} />
+                  <Route exact path="/organizationreport" component={Organizationreport} />
+                 
                   {/* Finance routes */}
                   <Route exact path="/PersonManagement" component={PersonManagement} />
                   <Route exact path="/FamilyFinanace" component={FamilyFinanace} />
@@ -209,7 +221,8 @@ function App() {
                   <Route exact path="/Titheprint" component={Titheprint} />
                   <Route exact path="/FamilyNewjune14" component={FamilyNew} />
                   <Route exact path="/Assignment" component={Assignmentpage} />
-
+       <Route exact path="/donationpage" component={Donationpage} />
+        <Route exact path="/curiadashboard" component={Curiadashboard} />
                   {/* Settings routes */}
                   <Route exact path="/FinanceSettings" component={FinanceSettings} />
                   <Route exact path="/communitysettings" component={CommunitySettings} />
