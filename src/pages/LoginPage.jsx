@@ -106,11 +106,11 @@ const LoginPage = () => {
           localStorage.setItem('user', JSON.stringify(userInfo));
           
           // Add delay for smooth transition
-          await new Promise(resolve => setTimeout(resolve, 800));
+          // await new Promise(resolve => setTimeout(resolve, 800));
           
           // Redirect based on role
           if (userInfo.role === 'superadmin') {
-            window.location.href = '/home';
+            window.location.href = '/super-admin';
           } else {
             window.location.href = '/home';
           }
