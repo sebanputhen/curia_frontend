@@ -161,25 +161,57 @@ const DonationPage = () => {
 
   const setField = (key, val) => setFormData((prev) => ({ ...prev, [key]: val }));
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchTableData(); }, []);
 
-  const fetchAll = async () => {
-    setIsLoading(true);
-    try {
-      const [donRes, orgRes, sumRes, priestRes] = await Promise.all([
-        axiosInstance.get("/donations/"),
-        axiosInstance.get("/organization/"),
-        axiosInstance.get("/donations/summary"),
-        axiosInstance.get("/priest/"),
-      ]);
-      setDonations(donRes.data.data || []);
-      setOrganizations(orgRes.data || []);
-      setSummary(sumRes.data.data || null);
-      setPriests(priestRes.data || []);
-    } catch { setMessage({ type: "error", text: "Failed to fetch data" }); }
-    finally { setIsLoading(false); }
-  };
+//   const fetchAll = async () => {
+//     setIsLoading(true);
+//     try {
+//       const [donRes, orgRes, sumRes, priestRes] = await Promise.all([
+//         axiosInstance.get("/donations/"),
+//         axiosInstance.get("/organization/"),
+//         axiosInstance.get("/donations/summary"),
+//         axiosInstance.get("/priest/"),
+//       ]);
+//       setDonations(donRes.data.data || []);
+//       setOrganizations(orgRes.data || []);
+//       setSummary(sumRes.data.data || null);
+//       setPriests(priestRes.data || []);
+//     } catch { setMessage({ type: "error", text: "Failed to fetch data" }); }
+//     finally { setIsLoading(false); }
+//   };
+const fetchTableData = async () => {
+  setIsLoading(true);
+  try {
+    const [donRes, sumRes] = await Promise.all([
+      axiosInstance.get("/donations/"),
+      axiosInstance.get("/donations/summary"),
+    ]);
+    setDonations(donRes.data.data || []);
+    setSummary(sumRes.data.data || null);
+  } catch { setMessage({ type: "error", text: "Failed to fetch data" }); }
+  finally { setIsLoading(false); }
+};
 
+const fetchDropdowns = async () => {
+  if (priests.length && organizations.length) return; // already loaded
+  try {
+    const [orgRes, priestRes] = await Promise.all([
+      axiosInstance.get("/organization/"),
+      axiosInstance.get("/priest/list"),  // lightweight endpoint
+    ]);
+    setOrganizations(orgRes.data?.data || orgRes.data || []);
+    setPriests(priestRes.data || []);
+  } catch { console.error("Failed to load dropdowns"); }
+};
+
+useEffect(() => { fetchTableData(); }, []);
+
+// Call fetchDropdowns when dialog opens:
+const openDialog = (record = null) => {
+  fetchDropdowns();
+  if (record) { handleEdit(record); } 
+  else { resetForm(); setIsModalVisible(true); }
+};
   const handleEdit = (record) => {
     setIsEditing(true);
     setSelectedDonation(record);
@@ -202,7 +234,7 @@ const DonationPage = () => {
     if (!window.confirm("Delete this donation?")) return;
     try {
       await axiosInstance.delete(`/donations/${id}`);
-      fetchAll();
+      fetchTableData();
       setMessage({ type: "success", text: "Donation deleted" });
     } catch { setMessage({ type: "error", text: "Failed to delete" }); }
   };
@@ -224,7 +256,7 @@ const DonationPage = () => {
         await axiosInstance.post("/donations/", formData);
         setMessage({ type: "success", text: "Donation recorded" });
       }
-      fetchAll();
+      fetchTableData();
       setIsModalVisible(false);
       resetForm();
     } catch (err) {
@@ -313,7 +345,7 @@ const DonationPage = () => {
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => handleEdit(row.original)}
+            <IconButton onClick={() => openDialog(row.original)}
               sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
               <EditIcon fontSize="small" sx={{ color: "#1a237e" }} />
             </IconButton>
@@ -372,7 +404,7 @@ const DonationPage = () => {
                   </Typography>
                 </Box>
               </Box>
-              <GradientButton startIcon={<Plus size={18} />} onClick={() => { setIsModalVisible(true); resetForm(); }}>
+              <GradientButton onClick={() => openDialog()}>
                 Record Donation
               </GradientButton>
             </Box>
@@ -413,7 +445,7 @@ const DonationPage = () => {
             state={{ isLoading }}
             renderTopToolbarCustomActions={() => (
               <Box sx={{ display: "flex", gap: 2, p: 2 }}>
-                <IconButton onClick={fetchAll} sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
+                <IconButton onClick={fetchTableData} sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
                   <RefreshIcon sx={{ color: "#1a237e" }} />
                 </IconButton>
               </Box>

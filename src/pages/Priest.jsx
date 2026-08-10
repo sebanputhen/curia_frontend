@@ -179,8 +179,19 @@ const Priest = () => {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
-  useEffect(() => { fetchPriests(); fetchParishes(); fetchCongregations(); }, []);
+  // useEffect(() => { fetchPriests(); fetchParishes(); fetchCongregations(); }, []);
+useEffect(() => { fetchPriests(); }, []);
 
+const openDialog = (priest = null) => {
+  if (!parishes.length) fetchParishes();
+  if (!congregations.length) fetchCongregations();
+  if (priest) {
+    handleEdit(priest);
+  } else {
+    resetForm();
+    setIsModalVisible(true);
+  }
+};
   const fetchPriests = async () => {
     setIsLoading(true);
     try {
@@ -448,7 +459,8 @@ const Priest = () => {
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => handleEdit(row.original)}
+            {/* <IconButton size="small" onClick={() => handleEdit(row.original)} */}
+            <IconButton size="small" onClick={() => openDialog(row.original)}
               sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
               <EditIcon fontSize="small" sx={{ color: "#1a237e" }} />
             </IconButton>
@@ -505,7 +517,8 @@ const Priest = () => {
                   </GradientButton>
                 )}
               </Box>
-              <GradientButton startIcon={<Plus size={18} />} onClick={() => { setIsModalVisible(true); resetForm(); }}>
+              {/* <GradientButton startIcon={<Plus size={18} />} onClick={() => { setIsModalVisible(true); resetForm(); }}> */}
+              <GradientButton startIcon={<Plus size={18} />} onClick={() => openDialog()}>
                 Add New Priest
               </GradientButton>
             </Box>
