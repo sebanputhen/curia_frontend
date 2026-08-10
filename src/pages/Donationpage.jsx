@@ -496,10 +496,9 @@ const openDialog = (record = null) => {
                   <StyledTextField select label="Select Priest" value={formData.priest}
                     onChange={(e) => setField("priest", e.target.value)} fullWidth required>
                     <MenuItem value=""><em>Select Priest</em></MenuItem>
-                    {priests
-                      .filter(p => p.status === "active")
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((p) => (
+                   {priests
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((p) => (
                         <MenuItem key={p._id} value={p._id}>
                           <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
                             <Typography sx={{ color: "#1a237e" }}>Fr. {p.name}</Typography>
