@@ -158,10 +158,11 @@ const DonationPage = () => {
   const [message, setMessage] = useState(null);
   const [formData, setFormData] = useState(defaultForm);
   const [priests, setPriests] = useState([]);
-
+const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 });
+const [totalRows, setTotalRows] = useState(0);
   const setField = (key, val) => setFormData((prev) => ({ ...prev, [key]: val }));
 
-  useEffect(() => { fetchTableData(); }, []);
+//   useEffect(() => { fetchTableData(); }, []);
 
 //   const fetchAll = async () => {
 //     setIsLoading(true);
@@ -183,14 +184,19 @@ const fetchTableData = async () => {
   setIsLoading(true);
   try {
     const [donRes, sumRes] = await Promise.all([
-      axiosInstance.get("/donations/"),
+      axiosInstance.get("/donations/", {
+        params: { page: pagination.pageIndex + 1, limit: pagination.pageSize }
+      }),
       axiosInstance.get("/donations/summary"),
     ]);
     setDonations(donRes.data.data || []);
+    setTotalRows(donRes.data.total || 0);
     setSummary(sumRes.data.data || null);
   } catch { setMessage({ type: "error", text: "Failed to fetch data" }); }
   finally { setIsLoading(false); }
 };
+
+useEffect(() => { fetchTableData(); }, [pagination.pageIndex, pagination.pageSize]);
 
 const fetchDropdowns = async () => {
   if (priests.length && organizations.length) return; // already loaded
@@ -204,7 +210,7 @@ const fetchDropdowns = async () => {
   } catch { console.error("Failed to load dropdowns"); }
 };
 
-useEffect(() => { fetchTableData(); }, []);
+// useEffect(() => { fetchTableData(); }, []);
 
 // Call fetchDropdowns when dialog opens:
 const openDialog = (record = null) => {
@@ -439,21 +445,27 @@ const openDialog = (record = null) => {
 
         {/* Table */}
         <ChartCard>
-          <MaterialReactTable
-            columns={columns} data={donations}
-            enableColumnFiltering enableGlobalFilter enablePagination enableSorting
-            state={{ isLoading }}
-            renderTopToolbarCustomActions={() => (
-              <Box sx={{ display: "flex", gap: 2, p: 2 }}>
-                <IconButton onClick={fetchTableData} sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
-                  <RefreshIcon sx={{ color: "#1a237e" }} />
-                </IconButton>
-              </Box>
-            )}
-            muiTablePaperProps={{ elevation: 0, sx: { borderRadius: "16px", border: "none" } }}
-            muiTableProps={{ sx: { "& .MuiTableCell-root": { borderBottom: "1px solid #F1F5F9" } } }}
-            initialState={{ density: "comfortable", pagination: { pageSize: 10 }, sorting: [{ id: "date", desc: true }] }}
-          />
+         <MaterialReactTable
+  columns={columns}
+  data={donations}
+  manualPagination
+  rowCount={totalRows}
+  onPaginationChange={setPagination}
+  state={{ isLoading, pagination }}
+  enableColumnFiltering
+  enableGlobalFilter
+  enableSorting
+  renderTopToolbarCustomActions={() => (
+    <Box sx={{ display: "flex", gap: 2, p: 2 }}>
+      <IconButton onClick={fetchTableData} sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
+        <RefreshIcon sx={{ color: "#1a237e" }} />
+      </IconButton>
+    </Box>
+  )}
+  muiTablePaperProps={{ elevation: 0, sx: { borderRadius: "16px", border: "none" } }}
+  muiTableProps={{ sx: { "& .MuiTableCell-root": { borderBottom: "1px solid #F1F5F9" } } }}
+  initialState={{ density: "comfortable", sorting: [{ id: "date", desc: true }] }}
+/>
         </ChartCard>
 
         {/* Create / Edit Dialog */}
