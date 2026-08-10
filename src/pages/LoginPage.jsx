@@ -110,7 +110,7 @@ const LoginPage = () => {
           
           // Redirect based on role
           if (userInfo.role === 'superadmin') {
-            window.location.href = '/super-admin';
+            window.location.href = '/home';
           } else {
             window.location.href = '/home';
           }

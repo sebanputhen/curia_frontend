@@ -196,7 +196,8 @@ const RoleBasedMenu = () => {
 
     if (isSuperAdmin()) {
       // Super admin gets everything
-      menuItems = [...superAdminMenuItems, ...menuItems, ...adminMenuItems];
+      // menuItems = [...superAdminMenuItems, ...menuItems, ...adminMenuItems];
+      menuItems = [...menuItems, ...adminMenuItems];
     } else if (isAdmin()) {
       // Regular admin gets standard menu
       menuItems = [...menuItems, ...adminMenuItems];
