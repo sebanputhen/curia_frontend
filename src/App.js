@@ -52,6 +52,7 @@ import OtherProjectSettings from "./pages/otherprojectsettings";
 import ParishAllocSettings from "./pages/ParishallocSettings";
 import ParishAllocSettings1 from "./pages/ParishallocSettings1";
 import organization from "./pages/Organization";
+import users from "./pages/Usermanagement";
 import narration from "./pages/Narration";
 // Other Pages
 import MoveFamily from "./pages/movefamily";
@@ -223,6 +224,7 @@ function App() {
                   <Route exact path="/Assignment" component={Assignmentpage} />
        <Route exact path="/donationpage" component={Donationpage} />
         <Route exact path="/curiadashboard" component={Curiadashboard} />
+             <Route exact path="/users" component={users} />
                   {/* Settings routes */}
                   <Route exact path="/FinanceSettings" component={FinanceSettings} />
                   <Route exact path="/communitysettings" component={CommunitySettings} />
