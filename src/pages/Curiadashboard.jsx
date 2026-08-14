@@ -144,7 +144,7 @@ const CuriaDashboard = () => {
           {[
             { label: "Total Donations (INR)", value: fmtINR(totals?.totalINR), sub: `${totals?.totalDonations || 0} transactions`, icon: <RupeeIcon />, gradient: "linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)", color: "#fff" },
             { label: "Priests", value: counts?.priestCount || 0, sub: `${counts?.activePriests || 0} active`, icon: <PersonIcon />, gradient: "linear-gradient(135deg, #059669 0%, #34D399 100%)", color: "#fff" },
-            { label: "Organizations", value: counts?.orgCount || 0, sub: "Registered", icon: <BusinessIcon />, gradient: "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)", color: "#fff" },
+            { label: "Receivers", value: counts?.orgCount || 0, sub: "Registered", icon: <BusinessIcon />, gradient: "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)", color: "#fff" },
             { label: "Abroad Priests", value: counts?.abroadPriests || 0, sub: `${counts?.nilCount || 0} NIL contributors`, icon: <FlightIcon />, gradient: "linear-gradient(135deg, #D97706 0%, #FBBF24 100%)", color: "#fff" },
           ].map((s, i) => (
             <Grid item xs={12} sm={6} md={3} key={i}>
@@ -226,7 +226,7 @@ const CuriaDashboard = () => {
           <Grid item xs={12} md={6}>
             <DashCard sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: "'Georgia', serif", mb: 2 }}>
-                Top Organizations
+                Top Receivers
               </Typography>
               {(topOrganizations || []).map((o, i) => (
                 <Box key={i} sx={{ mb: 1.5 }}>

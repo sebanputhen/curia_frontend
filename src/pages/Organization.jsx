@@ -102,7 +102,7 @@ const Organization = () => {
 
   const columns = useMemo(() => [
     {
-      accessorKey: "name", header: "Organization Name", size: 350,
+      accessorKey: "name", header: "Reciver Name", size: 350,
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box sx={{ width: 36, height: 36, borderRadius: 2, flexShrink: 0, background: "linear-gradient(135deg, #E8EAF620, #E8EAF660)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -135,7 +135,7 @@ const Organization = () => {
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <IconBox color="#4f46e5"><BusinessIcon sx={{ fontSize: 26 }} /></IconBox>
-              <Box><GradientText>Organization Master</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Manage organization names</Typography></Box>
+              <Box><GradientText>Reciver Master</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Manage organization names</Typography></Box>
             </Box>
             <GradientBtn startIcon={<Plus size={18} />} onClick={() => { setOpen(true); reset(); }}>Add New</GradientBtn>
           </Box>
@@ -155,11 +155,11 @@ const Organization = () => {
         <Box sx={{ p: 3, borderBottom: "1px solid #E2E8F0", background: "linear-gradient(135deg, #f8fafc, #E8EAF6)" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <IconBox color="#4f46e5" sx={{ width: 40, height: 40 }}><BusinessIcon sx={{ fontSize: 20 }} /></IconBox>
-            <Box><GradientText variant="h6">{editing ? "Edit Organization" : "Add New Organization"}</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>{editing ? "Update the name" : "Enter organization name"}</Typography></Box>
+            <Box><GradientText variant="h6">{editing ? "Edit Reciver " : "Add New Reciver"}</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>{editing ? "Update the name" : "Enter organization name"}</Typography></Box>
           </Box>
         </Box>
         <form onSubmit={submit}>
-          <Box sx={{ p: 3 }}><Field label="Organization Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter name" fullWidth required autoFocus /></Box>
+          <Box sx={{ p: 3 }}><Field label="Reciver Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter name" fullWidth required autoFocus /></Box>
           <Box sx={{ p: 3, pt: 0, display: "flex", gap: 1.5 }}>
             <Button variant="outlined" onClick={() => { setOpen(false); reset(); }} sx={{ flex: 1, borderRadius: 3, fontWeight: 600, borderColor: "#C5CAE9", color: "#1a237e", textTransform: "none" }}>Cancel</Button>
             <GradientBtn type="submit" disabled={loading} sx={{ flex: 1 }}>{loading ? <CircularProgress size={16} color="inherit" /> : editing ? "Update" : "Save"}</GradientBtn>

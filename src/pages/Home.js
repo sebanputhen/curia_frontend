@@ -138,7 +138,7 @@ const CuriaDashboard = () => {
   const statisticsCards = [
     { title: "Total Donations", value: fmtINR(totals?.totalINR), icon: <Wallet size={24} />, color: "#ea580c" },
     { title: "Priests", value: counts?.priestCount || 0, icon: <Users size={24} />, color: "#059669" },
-    { title: "Organizations", value: counts?.orgCount || 0, icon: <Building2 size={24} />, color: "#7c3aed" },
+    { title: "Receivers", value: counts?.orgCount || 0, icon: <Building2 size={24} />, color: "#7c3aed" },
     { title: "Abroad / NIL", value: `${counts?.abroadPriests || 0} / ${counts?.nilCount || 0}`, icon: <Church size={24} />, color: "#4f46e5" },
   ];
 
@@ -268,7 +268,7 @@ const CuriaDashboard = () => {
           <Grid item xs={12} md={6}>
             <ChartCard>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: "text.primary", mb: 3 }}>
-                Top Organizations
+                Top Receivers
               </Typography>
               {(topOrganizations || []).map((o, i) => (
                 <Box key={i} sx={{ mb: 1.8 }}>

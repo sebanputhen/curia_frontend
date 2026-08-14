@@ -52,14 +52,14 @@ const PriestLedger = () => {
     doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Priest: Fr. ${summary.priest.name}`, 14, 26); doc.text(`House Name: ${summary.priest.hname || "—"}`, 14, 32);
     const currLines = Object.entries(summary.currencyTotals).map(([c, a]) => `${c}: ${fmtCurrency(a, c)}`).join("  |  ");
     doc.setFontSize(9); doc.text(`Totals → ${currLines}  |  INR: ${fmtINR(summary.totalINR)}`, 14, 38);
-    autoTable(doc, { startY: 44, head: [["#", "Date", "Organization", "Purpose", "Currency", "Amount", "INR", "Running Total", "Mode"]], body: ledger.map((r) => [r.slNo, r.date ? new Date(r.date).toLocaleDateString() : "—", r.organization, r.purpose || "—", r.currency, fmtCurrency(r.amount, r.currency), fmtINR(r.inrAmount), fmtINR(r.runningTotal), r.modeOfTransfer || "—"]), styles: { fontSize: 7.5 }, headStyles: { fillColor: [26, 35, 126], textColor: 255 } });
+    autoTable(doc, { startY: 44, head: [["#", "Date", "Receivers", "Purpose", "Currency", "Amount", "INR", "Running Total", "Mode"]], body: ledger.map((r) => [r.slNo, r.date ? new Date(r.date).toLocaleDateString() : "—", r.organization, r.purpose || "—", r.currency, fmtCurrency(r.amount, r.currency), fmtINR(r.inrAmount), fmtINR(r.runningTotal), r.modeOfTransfer || "—"]), styles: { fontSize: 7.5 }, headStyles: { fillColor: [26, 35, 126], textColor: 255 } });
     doc.save(`Priest_Ledger_${summary.priest.name.replace(/\s/g, "_")}.pdf`);
   };
 
   const columns = useMemo(() => [
     { accessorKey: "slNo", header: "#", size: 60, Cell: ({ row }) => <Typography variant="body2" sx={{ fontWeight: 600, textAlign: "center", color: "#64748B" }}>{row.original.slNo}</Typography> },
     { accessorKey: "date", header: "Date", size: 120, Cell: ({ row }) => <Typography variant="body2" sx={{ fontWeight: 600, color: "#0F172A" }}>{row.original.date ? new Date(row.original.date).toLocaleDateString() : "—"}</Typography> },
-    { accessorKey: "organization", header: "Organization", size: 180, Cell: ({ row }) => <Typography variant="body2" sx={{ fontWeight: 600, color: "#0F172A" }}>{row.original.organization}</Typography> },
+    { accessorKey: "organization", header: "Receivers", size: 180, Cell: ({ row }) => <Typography variant="body2" sx={{ fontWeight: 600, color: "#0F172A" }}>{row.original.organization}</Typography> },
     { accessorKey: "purpose", header: "Purpose", size: 160, Cell: ({ row }) => <Typography variant="body2" sx={{ color: "#64748B" }}>{row.original.purpose || "—"}</Typography> },
     { accessorKey: "currency", header: "Currency", size: 100, Cell: ({ row }) => <Chip label={row.original.currency} size="small" sx={{ fontWeight: 700, fontSize: "0.7rem", height: 22, bgcolor: "#E8EAF6", color: "#1a237e" }} /> },
     { accessorKey: "amount", header: "Amount", size: 130, Cell: ({ row }) => <Typography variant="body2" sx={{ fontWeight: 700, textAlign: "right", color: "#4f46e5" }}>{fmtCurrency(row.original.amount, row.original.currency)}</Typography> },

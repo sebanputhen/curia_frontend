@@ -241,7 +241,7 @@ const LoginPage = () => {
       setLoading(true);
       setError('');
       setSuccess('');
-      const res = await axiosInstance.post('/auth/verify-otp', { email: fpEmail, otp });
+      const res = await axiosInstance.post('/authf/verify-otp', { email: fpEmail, otp });
       setResetToken(res.data.resetToken || '');
       setView('forgot-reset');
     } catch (err) {
@@ -257,7 +257,7 @@ const LoginPage = () => {
       setLoading(true);
       setError('');
       setSuccess('');
-      await axiosInstance.post('/auth/forgot-password', { email: fpEmail });
+      await axiosInstance.post('/authf/forgot-password', { email: fpEmail });
       setOtp('');
       setSuccess('OTP resent to your email');
       setResendTimer(60);
@@ -277,7 +277,7 @@ const LoginPage = () => {
     try {
       setLoading(true);
       setError('');
-      await axiosInstance.post('/auth/reset-password', {
+      await axiosInstance.post('/authf/reset-password', {
         email: fpEmail,
         resetToken,
         newPassword

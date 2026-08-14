@@ -159,7 +159,7 @@ const baseMenuItems = [
   {
     type: 'single',
     path: '/organization',
-    label: 'Manage Organization',
+    label: 'Manage Receivers Details',
     icon: '🏛️',
   },
   {
@@ -198,7 +198,7 @@ const baseMenuItems = [
   {
     type: 'single',
     path: '/organizationreport',
-    label: 'Organization Report',
+    label: 'Receivers Report',
     icon: '🏢',
   },
   {

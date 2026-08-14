@@ -47,11 +47,11 @@ const OrganizationReport = () => {
     if (!report.length) return; const doc = new jsPDF({ orientation: "landscape" });
     doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("Organization-wise Donation Report", 14, 18);
     autoTable(doc, { startY: 28, head: [["#", "Organization", "Priests", "Donations", "Total (INR)", "Status"]], body: report.map((r, i) => [i + 1, r.organization.name, r.priestCount, r.donationCount, fmtINR(r.totalINR), r.isNil ? "NIL" : "Active"]), styles: { fontSize: 8 }, headStyles: { fillColor: [26, 35, 126], textColor: 255 } });
-    doc.save(`Organization_Report.pdf`);
+    doc.save(`Receivers_Report.pdf`);
   };
 
   const columns = useMemo(() => [
-    { accessorKey: "organization.name", header: "Organization", size: 250, Cell: ({ row }) => (<Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}><Box sx={{ width: 34, height: 34, borderRadius: 2, flexShrink: 0, background: row.original.isNil ? "linear-gradient(135deg, #FEE2E2, #FECACA)" : "linear-gradient(135deg, #E8EAF6, #C5CAE9)", display: "flex", alignItems: "center", justifyContent: "center" }}><BusinessIcon fontSize="small" sx={{ color: row.original.isNil ? "#DC2626" : "#1a237e" }} /></Box><Typography variant="body2" sx={{ fontWeight: 700, color: "#0F172A" }}>{row.original.organization.name}</Typography></Box>) },
+    { accessorKey: "organization.name", header: "Receivers", size: 250, Cell: ({ row }) => (<Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}><Box sx={{ width: 34, height: 34, borderRadius: 2, flexShrink: 0, background: row.original.isNil ? "linear-gradient(135deg, #FEE2E2, #FECACA)" : "linear-gradient(135deg, #E8EAF6, #C5CAE9)", display: "flex", alignItems: "center", justifyContent: "center" }}><BusinessIcon fontSize="small" sx={{ color: row.original.isNil ? "#DC2626" : "#1a237e" }} /></Box><Typography variant="body2" sx={{ fontWeight: 700, color: "#0F172A" }}>{row.original.organization.name}</Typography></Box>) },
     { accessorKey: "priestCount", header: "Priests", size: 100, Cell: ({ row }) => (<Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "center" }}><PersonIcon fontSize="small" sx={{ color: "#64748B", fontSize: 16 }} /><Typography variant="body2" sx={{ fontWeight: 600 }}>{row.original.priestCount}</Typography></Box>) },
     { accessorKey: "donationCount", header: "Donations", size: 110, Cell: ({ row }) => (<Typography variant="body2" sx={{ fontWeight: 700, textAlign: "center", color: row.original.donationCount > 0 ? "#1a237e" : "#DC2626" }}>{row.original.donationCount}</Typography>) },
     { accessorKey: "totalINR", header: "Total (INR)", size: 160, Cell: ({ row }) => (<Typography variant="body2" sx={{ fontWeight: 700, color: row.original.totalINR > 0 ? "#059669" : "#DC2626" }}>{fmtINR(row.original.totalINR)}</Typography>) },
@@ -60,15 +60,15 @@ const OrganizationReport = () => {
   ], []);
 
   const stats = summary ? [
-    { title: "Organizations", value: summary.totalOrganizations, icon: <BusinessIcon />, color: "#4f46e5" },
+    { title: "Receivers", value: summary.totalOrganizations, icon: <BusinessIcon />, color: "#4f46e5" },
     { title: "Active", value: summary.activeOrganizations, icon: <DonationIcon />, color: "#059669" },
     { title: "NIL", value: summary.nilOrganizations, icon: <BusinessIcon />, color: "#DC2626" },
-    { title: "Grand Total (INR)", value: fmtINR(summary.grandTotalINR), icon: <RupeeIcon />, color: "#ea580c" },
+    { title: "Grand Total (INR)", value: fmtINR(summary.grandTotalINR), icon: <RupeeIcon />, color: "#ea580c" }, 
   ] : [];
 
   return (
     <Page><CssBaseline />
-      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#7c3aed"><BusinessIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Organization Report</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Donation summary grouped by organization</Typography></Box></Box><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!report.length}>Export PDF</GradientBtn></Box></Content></StyledCard>
+      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#7c3aed"><BusinessIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Receivers Report</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Donation summary grouped by Receivers</Typography></Box></Box><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!report.length}>Export PDF</GradientBtn></Box></Content></StyledCard>
 
       <StyledCard sx={{ mb: 3, overflow: "visible" }}>
         <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setFiltersOpen(!filtersOpen)}>
@@ -78,7 +78,7 @@ const OrganizationReport = () => {
         <Collapse in={filtersOpen}><Divider sx={{ borderColor: "#E2E8F0" }} /><Box sx={{ p: 2.5, display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-end" }}>
           <Field label="From Date" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ minWidth: 180 }} />
           <Field label="To Date" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ minWidth: 180 }} />
-          <Field select label="Organization" value={selectedOrg} onChange={(e) => setSelectedOrg(e.target.value)} sx={{ minWidth: 220 }}><MenuItem value="">All Organizations</MenuItem>{orgList.map((o) => <MenuItem key={o._id} value={o._id}>{o.name}</MenuItem>)}</Field>
+          <Field select label="Receivers" value={selectedOrg} onChange={(e) => setSelectedOrg(e.target.value)} sx={{ minWidth: 220 }}><MenuItem value="">All Receivers</MenuItem>{orgList.map((o) => <MenuItem key={o._id} value={o._id}>{o.name}</MenuItem>)}</Field>
           <GradientBtn onClick={fetch} disabled={loading} startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <AssessmentIcon />}>{loading ? "Generating..." : "Generate Report"}</GradientBtn>
           <Button variant="outlined" onClick={() => { setFromDate(""); setToDate(""); setSelectedOrg(""); }} sx={{ borderRadius: 3, fontWeight: 600, borderColor: "#C5CAE9", color: "#1a237e", textTransform: "none" }}>Clear</Button>
         </Box></Collapse>
