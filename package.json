@@ -23,6 +23,7 @@
     "cross-env": "^7.0.3",
     "dayjs": "^1.11.13",
     "export-to-csv": "^1.4.0",
+    "firebase": "^12.17.1",
     "framer-motion": "^11.15.0",
     "html2pdf": "^0.0.11",
     "html2pdf.js": "^0.10.2",

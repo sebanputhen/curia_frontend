@@ -222,7 +222,7 @@ const LoginPage = () => {
     try {
       setLoading(true);
       setError('');
-      await axiosInstance.post('/authf/forgot-password', { email: fpEmail });
+      await axiosInstance.post('/auth/forgot-password', { email: fpEmail });
       setSuccess('OTP sent to your email');
       setResendTimer(60);
       setView('forgot-otp');
