@@ -187,6 +187,7 @@ function App() {
                     <SuperAdminRoute exact path="/mgm" component={AdminManagement} />
                     <SuperAdminRoute exact path="/database-backup" component={DatabaseBackup} />
                        <SuperAdminRoute exact path="/filter" component={UnifiedDataFilter} />
+                        <SuperAdminRoute exact path="/users" component={users} />
                   {/* Core routes */}
                   <Route exact path="/home" component={Home} />
                   <Route exact path="/dashboard" component={Home} />
@@ -224,7 +225,7 @@ function App() {
                   <Route exact path="/Assignment" component={Assignmentpage} />
        <Route exact path="/donationpage" component={Donationpage} />
         <Route exact path="/curiadashboard" component={Curiadashboard} />
-             <Route exact path="/users" component={users} />
+            
                   {/* Settings routes */}
                   <Route exact path="/FinanceSettings" component={FinanceSettings} />
                   <Route exact path="/communitysettings" component={CommunitySettings} />

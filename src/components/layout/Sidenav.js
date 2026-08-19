@@ -213,11 +213,11 @@ const baseMenuItems = [
 
 // Super admin only menu items
 const superAdminMenuItems = [
-  // {
-  //   type: 'header',
-  //   label: 'SUPER ADMIN',
-  //   superAdminOnly: true,
-  // },  
+  {
+    type: 'header',
+    label: 'SUPER ADMIN',
+    superAdminOnly: true,
+  },  
   // {
   //   type: 'single',
   //   path: '/parishAnalytics',
@@ -225,13 +225,13 @@ const superAdminMenuItems = [
   //   icon: '⛪',
   //   superAdminOnly: true,
   // },
-  // {
-  //   type: 'single',
-  //   path: '/mgm',
-  //   label: 'Admin Management',
-  //   icon: '👥',
-  //   superAdminOnly: true,
-  // },
+  {
+    type: 'single',
+    path: '/mgm',
+    label: 'Admin Management',
+    icon: '👥',
+    superAdminOnly: true,
+  },
   //   {
   //   type: 'single',
   //   path: '/database-backup',
