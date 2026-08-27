@@ -174,6 +174,8 @@ const DonationPage = () => {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 });
   const [totalRows, setTotalRows] = useState(0);
 
+  const isINR = formData.currency === "INR";
+
   const setField = (key, val) => setFormData((prev) => ({ ...prev, [key]: val }));
 
   const fetchTableData = async () => {
@@ -227,7 +229,6 @@ const DonationPage = () => {
     setIsEditing(true);
     setSelectedDonation(record);
 
-    // Match narration by name from the loaded list
     const matchedNarration = narrations.find(
       (n) => n.name === record.purpose || n._id === record.narration
     );
@@ -265,11 +266,15 @@ const DonationPage = () => {
     try {
       const payload = { ...formData };
 
+      // If currency is INR, clear inrAmount since amount itself is in INR
+      if (payload.currency === "INR") {
+        payload.inrAmount = "";
+      }
+
       // Handle organization "other"
       if (payload.organization === "other" && payload.organizationName) {
         const orgRes = await axiosInstance.post("/organization/", { name: payload.organizationName });
         payload.organization = orgRes.data?.data?._id || orgRes.data._id;
-        // Refresh orgs
         setOrganizations((prev) => [...prev, orgRes.data?.data || orgRes.data]);
       }
 
@@ -748,13 +753,17 @@ const DonationPage = () => {
                   </Grid>
                 )}
 
-                {/* Currency (Autocomplete) */}
-                <Grid item xs={12} sm={4}>
+                {/* Currency + Amount — responsive to INR selection */}
+                <Grid item xs={12} sm={isINR ? 6 : 4}>
                   <StyledAutocomplete
                     options={CURRENCIES}
                     getOptionLabel={(o) => `${o.symbol}  ${o.label}`}
                     value={CURRENCIES.find((c) => c.value === formData.currency) || null}
-                    onChange={(_, val) => setField("currency", val?.value || "")}
+                    onChange={(_, val) => {
+                      setField("currency", val?.value || "");
+                      // Clear inrAmount when switching to INR
+                      if (val?.value === "INR") setField("inrAmount", "");
+                    }}
                     renderInput={(params) => (
                       <TextField {...params} label="Currency" required
                         sx={{
@@ -779,7 +788,7 @@ const DonationPage = () => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={isINR ? 6 : 4}>
                   <StyledTextField
                     label={`Amount${formData.currency ? ` (${formData.currency})` : ""}`}
                     type="number"
@@ -790,18 +799,20 @@ const DonationPage = () => {
                     required
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
-                  <StyledTextField
-                    label="INR Amount (₹)"
-                    type="number"
-                    value={formData.inrAmount}
-                    onChange={(e) => setField("inrAmount", e.target.value)}
-                    inputProps={{ min: 0, step: "0.01" }}
-                    fullWidth
-                    sx={{ "& .MuiOutlinedInput-root": { bgcolor: "#F0FDF4" } }}
-                    helperText="Optional"
-                  />
-                </Grid>
+                {!isINR && (
+                  <Grid item xs={12} sm={4}>
+                    <StyledTextField
+                      label="INR Amount (₹)"
+                      type="number"
+                      value={formData.inrAmount}
+                      onChange={(e) => setField("inrAmount", e.target.value)}
+                      inputProps={{ min: 0, step: "0.01" }}
+                      fullWidth
+                      sx={{ "& .MuiOutlinedInput-root": { bgcolor: "#F0FDF4" } }}
+                      helperText="Optional"
+                    />
+                  </Grid>
+                )}
 
                 {/* ── Transfer Details ── */}
                 <Grid item xs={12} sx={{ mt: 1 }}>

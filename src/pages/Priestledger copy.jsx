@@ -15,7 +15,6 @@ import {
 } from "@mui/icons-material";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 
 const Page = styled(Box)(() => ({ backgroundColor: "#f8fafc", minHeight: "100vh", padding: 24 }));
 const StyledCard = styled(Card)(() => ({ backgroundColor: "#fff", borderRadius: 16, boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)", transition: "all 0.3s ease", "&:hover": { transform: "translateY(-4px)", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" } }));
@@ -28,13 +27,8 @@ const GradientText = ({ children, variant = "h5", sx = {} }) => (<Typography var
 const StatBox = styled(Box)(() => ({ padding: "20px 24px", borderRadius: 16, backgroundColor: "#fff", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 180, transition: "all 0.3s ease", "&:hover": { transform: "translateY(-4px)", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" } }));
 const StatValue = styled(Typography)(() => ({ fontSize: "1.6rem", fontWeight: 700, lineHeight: 1.2, background: "linear-gradient(45deg, #1a237e, #0d47a1)", backgroundClip: "text", WebkitBackgroundClip: "text", color: "transparent" }));
 
-// Screen formatters
 const fmtINR = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
 const fmtCurrency = (n, c) => new Intl.NumberFormat("en-US", { style: "currency", currency: c || "USD", maximumFractionDigits: 2 }).format(n || 0);
-
-// PDF-safe formatters (plain ASCII)
-const fmtINR_PDF = (n) => "INR " + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtCurrency_PDF = (n, c) => (c || "USD") + " " + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const PriestLedger = () => {
   const [priests, setPriests] = useState([]); const [ledger, setLedger] = useState([]); const [summary, setSummary] = useState(null);
@@ -53,107 +47,13 @@ const PriestLedger = () => {
   const clear = () => { setSelectedPriest(""); setFromDate(""); setToDate(""); setLedger([]); setSummary(null); };
 
   const exportPDF = () => {
-    if (!ledger.length || !summary) return;
-    const doc = new jsPDF({ orientation: "landscape" });
+    if (!ledger.length || !summary) return; const doc = new jsPDF();
     doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("Priest Donation Ledger", 14, 18);
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(`Priest: Fr. ${summary.priest.name}`, 14, 26);
-    doc.text(`House Name: ${summary.priest.hname || "-"}`, 14, 32);
-    const parts = [];
-    if (fromDate) parts.push(`From: ${new Date(fromDate).toLocaleDateString()}`);
-    if (toDate) parts.push(`To: ${new Date(toDate).toLocaleDateString()}`);
-    if (parts.length) doc.text(parts.join("  |  "), 14, 38);
-
-    const currLines = Object.entries(summary.currencyTotals).map(([c, a]) => `${c}: ${fmtCurrency_PDF(a, c)}`).join("  |  ");
-    doc.setFontSize(9);
-    doc.text(`Totals -> ${currLines}  |  ${fmtINR_PDF(summary.totalINR)}`, 14, parts.length ? 44 : 38);
-
-    const startY = parts.length ? 50 : 44;
-
-    autoTable(doc, {
-      startY,
-      head: [["#", "Date", "Receivers", "Purpose", "Currency", "Amount", "INR Amount", "Running Total", "Mode", "Remarks"]],
-      body: ledger.map((r) => [
-        r.slNo,
-        r.date ? new Date(r.date).toLocaleDateString() : "-",
-        r.organization,
-        r.purpose || "-",
-        r.currency,
-        fmtCurrency_PDF(r.amount, r.currency),
-        fmtINR_PDF(r.inrAmount),
-        fmtINR_PDF(r.runningTotal),
-        r.modeOfTransfer || "-",
-        r.remarks || "-",
-      ]),
-      styles: { fontSize: 7.5, cellPadding: 3 },
-      headStyles: { fillColor: [26, 35, 126], textColor: 255, fontStyle: "bold" },
-    });
-
+    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Priest: Fr. ${summary.priest.name}`, 14, 26); doc.text(`House Name: ${summary.priest.hname || "—"}`, 14, 32);
+    const currLines = Object.entries(summary.currencyTotals).map(([c, a]) => `${c}: ${fmtCurrency(a, c)}`).join("  |  ");
+    doc.setFontSize(9); doc.text(`Totals → ${currLines}  |  INR: ${fmtINR(summary.totalINR)}`, 14, 38);
+    autoTable(doc, { startY: 44, head: [["#", "Date", "Receivers", "Purpose", "Currency", "Amount", "INR", "Running Total", "Mode"]], body: ledger.map((r) => [r.slNo, r.date ? new Date(r.date).toLocaleDateString() : "—", r.organization, r.purpose || "—", r.currency, fmtCurrency(r.amount, r.currency), fmtINR(r.inrAmount), fmtINR(r.runningTotal), r.modeOfTransfer || "—"]), styles: { fontSize: 7.5 }, headStyles: { fillColor: [26, 35, 126], textColor: 255 } });
     doc.save(`Priest_Ledger_${summary.priest.name.replace(/\s/g, "_")}.pdf`);
-  };
-
-  const exportExcel = () => {
-    if (!ledger.length || !summary) return;
-    const wb = XLSX.utils.book_new();
-    const priestName = summary.priest.name;
-
-    // ── Sheet 1: Summary ──
-    const summaryRows = [
-      ["Priest Donation Ledger"],
-      [],
-      ["Priest", `Fr. ${priestName}`],
-      ["House Name", summary.priest.hname || ""],
-      ["Country", summary.priest.workingCountry || ""],
-      ["Phone", summary.priest.phone || ""],
-      [],
-      ["Filter", "Value"],
-      ["From Date", fromDate ? new Date(fromDate).toLocaleDateString() : "All"],
-      ["To Date", toDate ? new Date(toDate).toLocaleDateString() : "All"],
-      [],
-      ["Summary", ""],
-      ["Total Donations", summary.totalDonations],
-      ["Grand Total (INR)", summary.totalINR],
-    ];
-    Object.entries(summary.currencyTotals).forEach(([cur, amt]) => {
-      summaryRows.push([`Total (${cur})`, amt]);
-    });
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-    wsSummary["!cols"] = [{ wch: 22 }, { wch: 24 }];
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-
-    // ── Sheet 2: Ledger ──
-    const ledgerHeaders = ["Sl No", "Date", "Receivers", "Purpose", "Currency", "Amount", "INR Amount", "Running Total (INR)", "Mode", "Remarks"];
-    const ledgerRows = [ledgerHeaders];
-    ledger.forEach((r) => {
-      ledgerRows.push([
-        r.slNo,
-        r.date ? new Date(r.date).toLocaleDateString() : "",
-        r.organization,
-        r.purpose || "",
-        r.currency,
-        r.amount || 0,
-        r.inrAmount || 0,
-        r.runningTotal || 0,
-        r.modeOfTransfer || "",
-        r.remarks || "",
-      ]);
-    });
-    const wsLedger = XLSX.utils.aoa_to_sheet(ledgerRows);
-    wsLedger["!cols"] = [
-      { wch: 6 },   // Sl No
-      { wch: 12 },  // Date
-      { wch: 24 },  // Receivers
-      { wch: 20 },  // Purpose
-      { wch: 10 },  // Currency
-      { wch: 14 },  // Amount
-      { wch: 14 },  // INR Amount
-      { wch: 18 },  // Running Total
-      { wch: 14 },  // Mode
-      { wch: 20 },  // Remarks
-    ];
-    XLSX.utils.book_append_sheet(wb, wsLedger, "Ledger");
-
-    XLSX.writeFile(wb, `Priest_Ledger_${priestName.replace(/\s/g, "_")}.xlsx`);
   };
 
   const columns = useMemo(() => [
@@ -171,7 +71,7 @@ const PriestLedger = () => {
 
   return (
     <Page><CssBaseline />
-      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#ea580c"><LedgerIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Priest Ledger</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Chronological donation ledger with running balance</Typography></Box></Box><Box sx={{ display: "flex", gap: 1.5 }}><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportExcel} disabled={!ledger.length} sx={{ background: "linear-gradient(135deg, #059669, #047857)", "&:hover": { background: "linear-gradient(135deg, #047857, #059669)" } }}>Export Excel</GradientBtn><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!ledger.length}>Export PDF</GradientBtn></Box></Box></Content></StyledCard>
+      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#ea580c"><LedgerIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Priest Ledger</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Chronological donation ledger with running balance</Typography></Box></Box><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!ledger.length}>Export PDF</GradientBtn></Box></Content></StyledCard>
 
       <StyledCard sx={{ mb: 3, overflow: "visible" }}>
         <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setFiltersOpen(!filtersOpen)}>

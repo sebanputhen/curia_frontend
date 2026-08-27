@@ -15,6 +15,7 @@ import {
 } from "@mui/icons-material";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 // ─── Styled (Home theme) ──────────────────────────────────────────────────────
 const Page = styled(Box)(() => ({ backgroundColor: "#f8fafc", minHeight: "100vh", padding: 24 }));
@@ -41,6 +42,10 @@ const StatValue = styled(Typography)(() => ({
 
 const fmtINR = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
 const fmtCurrency = (n, c) => new Intl.NumberFormat("en-US", { style: "currency", currency: c || "USD", maximumFractionDigits: 2 }).format(n || 0);
+
+// PDF-safe versions — no special symbols, just plain ASCII currency codes + number
+const fmtINR_PDF = (n) => "INR " + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtCurrency_PDF = (n, c) => (c || "USD") + " " + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const DonationReport = () => {
   const [report, setReport] = useState([]);
@@ -73,11 +78,210 @@ const DonationReport = () => {
     const doc = new jsPDF({ orientation: "landscape" });
     doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("Donation Report", 14, 18);
     doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    const parts = []; if (fromDate) parts.push(`From: ${new Date(fromDate).toLocaleDateString()}`); if (toDate) parts.push(`To: ${new Date(toDate).toLocaleDateString()}`); if (country) parts.push(`Country: ${country}`);
+    const parts = [];
+    if (fromDate) parts.push(`From: ${new Date(fromDate).toLocaleDateString()}`);
+    if (toDate) parts.push(`To: ${new Date(toDate).toLocaleDateString()}`);
+    if (country) parts.push(`Country: ${country}`);
     doc.text(parts.length ? parts.join("  |  ") : "All records", 14, 25);
-    if (summary) doc.text(`Priests: ${summary.totalPriests}  |  Contributors: ${summary.contributingPriests}  |  NIL: ${summary.nilPriests}  |  Total: ${fmtINR(summary.grandTotalINR)}`, 14, 31);
-    autoTable(doc, { startY: 36, head: [["#", "Priest", "House Name", "Country", "Donations", "Total Amount", "Total INR", "Status"]], body: report.map((r, i) => [i + 1, r.priest.name, r.priest.hname, r.priest.workingCountry || r.priest.workingRegion || "", r.donationCount, r.currencies.length ? r.currencies.map((c) => { const sum = r.donations.filter((d) => d.currency === c).reduce((s, d) => s + d.amount, 0); return fmtCurrency(sum, c); }).join(", ") : "—", fmtINR(r.totalINR), r.isNil ? "NIL" : "Contributed"]), styles: { fontSize: 8 }, headStyles: { fillColor: [26, 35, 126], textColor: 255 } });
+    if (summary) doc.text(`Priests: ${summary.totalPriests}  |  Contributors: ${summary.contributingPriests}  |  NIL: ${summary.nilPriests}  |  Total: ${fmtINR_PDF(summary.grandTotalINR)}`, 14, 31);
+
+    // Build flat body array + track which row indices are priest summary rows
+    const tableBody = [];
+    const priestRowIndices = new Set();
+
+    report.forEach((r, i) => {
+      const foreignTotal = r.currencies && r.currencies.length
+        ? r.currencies.map((c) => {
+            const sum = (r.donations || []).filter((d) => d.currency === c).reduce((s, d) => s + d.amount, 0);
+            return fmtCurrency_PDF(sum, c);
+          }).join(", ")
+        : "-";
+
+      // Priest summary row
+      priestRowIndices.add(tableBody.length);
+      tableBody.push([
+        i + 1,
+        `Fr. ${r.priest.name}`,
+        r.priest.hname || "",
+        r.priest.workingCountry || r.priest.workingRegion || "",
+        r.donationCount,
+        foreignTotal,
+        fmtINR_PDF(r.totalINR),
+        r.isNil ? "NIL" : "Contributed",
+      ]);
+
+      // Individual donation detail rows under this priest
+      if (!r.isNil && r.donations && r.donations.length > 0) {
+        r.donations.forEach((d) => {
+          tableBody.push([
+            "",
+            `    ${d.date ? new Date(d.date).toLocaleDateString() : "-"}`,
+            d.purpose || "-",
+            d.modeOfTransfer || "-",
+            d.currency || "",
+            fmtCurrency_PDF(d.amount, d.currency),
+            fmtINR_PDF(d.inrAmount),
+            d.remarks || "-",
+          ]);
+        });
+      }
+    });
+
+    autoTable(doc, {
+      startY: 36,
+      head: [["#", "Priest / Date", "House Name / Purpose", "Country / Mode", "Count / Currency", "Foreign Amount", "INR Amount", "Status / Remarks"]],
+      body: tableBody,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [26, 35, 126], textColor: 255, fontStyle: "bold" },
+      willDrawCell: (data) => {
+        if (data.section === "body") {
+          if (priestRowIndices.has(data.row.index)) {
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.fillColor = [232, 234, 246];
+            data.cell.styles.textColor = [15, 23, 42];
+          } else {
+            data.cell.styles.textColor = [100, 116, 139];
+            data.cell.styles.fontSize = 7;
+            data.cell.styles.fillColor = [248, 250, 252];
+          }
+        }
+      },
+    });
+
     doc.save(`Donation_Report${fromDate ? `_${fromDate}` : ""}${toDate ? `_to_${toDate}` : ""}.pdf`);
+  };
+
+  const exportExcel = () => {
+    if (!report.length) return;
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Summary ──
+    const summaryRows = [
+      ["Donation Report"],
+      [],
+      ["Filter", "Value"],
+      ["From Date", fromDate ? new Date(fromDate).toLocaleDateString() : "All"],
+      ["To Date", toDate ? new Date(toDate).toLocaleDateString() : "All"],
+      ["Country", country || "All"],
+      [],
+    ];
+    if (summary) {
+      summaryRows.push(
+        ["Summary", ""],
+        ["Total Priests", summary.totalPriests],
+        ["Contributing Priests", summary.contributingPriests],
+        ["NIL Priests", summary.nilPriests],
+        ["Total Donations", summary.grandTotalDonations],
+        ["Grand Total (INR)", summary.grandTotalINR],
+      );
+    }
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+    // Make title bold-ish via column widths
+    wsSummary["!cols"] = [{ wch: 22 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    // ── Sheet 2: Priest-wise with donation details ──
+    const detailHeaders = [
+      "Sl No", "Priest Name", "House Name", "Country", "Phone",
+      "# Donations", "Total Foreign", "Total INR", "Status",
+      "", // spacer
+      "Date", "Purpose", "Currency", "Amount", "INR Amount", "Mode", "Remarks",
+    ];
+    const detailRows = [detailHeaders];
+
+    report.forEach((r, i) => {
+      const foreignTotal = r.currencies && r.currencies.length
+        ? r.currencies.map((c) => {
+            const sum = (r.donations || []).filter((d) => d.currency === c).reduce((s, d) => s + d.amount, 0);
+            return `${c} ${Number(sum).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+          }).join(", ")
+        : "-";
+
+      // Priest summary row
+      detailRows.push([
+        i + 1,
+        `Fr. ${r.priest.name}`,
+        r.priest.hname || "",
+        r.priest.workingCountry || r.priest.workingRegion || "",
+        r.priest.phone || "",
+        r.donationCount,
+        foreignTotal,
+        r.totalINR || 0,
+        r.isNil ? "NIL" : "Contributed",
+        "", "", "", "", "", "", "", "",
+      ]);
+
+      // Donation detail rows
+      if (!r.isNil && r.donations && r.donations.length > 0) {
+        r.donations.forEach((d) => {
+          detailRows.push([
+            "", "", "", "", "", "", "", "", "",
+            "", // spacer
+            d.date ? new Date(d.date).toLocaleDateString() : "",
+            d.purpose || "",
+            d.currency || "",
+            d.amount || 0,
+            d.inrAmount || 0,
+            d.modeOfTransfer || "",
+            d.remarks || "",
+          ]);
+        });
+      }
+    });
+
+    const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
+    wsDetail["!cols"] = [
+      { wch: 6 },   // Sl No
+      { wch: 22 },  // Priest Name
+      { wch: 18 },  // House Name
+      { wch: 14 },  // Country
+      { wch: 14 },  // Phone
+      { wch: 12 },  // # Donations
+      { wch: 22 },  // Total Foreign
+      { wch: 16 },  // Total INR
+      { wch: 12 },  // Status
+      { wch: 2 },   // spacer
+      { wch: 12 },  // Date
+      { wch: 20 },  // Purpose
+      { wch: 10 },  // Currency
+      { wch: 14 },  // Amount
+      { wch: 14 },  // INR Amount
+      { wch: 14 },  // Mode
+      { wch: 20 },  // Remarks
+    ];
+    XLSX.utils.book_append_sheet(wb, wsDetail, "Donation Details");
+
+    // ── Sheet 3: Flat donation list (all donations in one simple table) ──
+    const flatHeaders = ["Sl No", "Priest", "House Name", "Country", "Date", "Purpose", "Currency", "Amount", "INR Amount", "Mode", "Remarks"];
+    const flatRows = [flatHeaders];
+    let slNo = 1;
+    report.forEach((r) => {
+      if (!r.isNil && r.donations && r.donations.length > 0) {
+        r.donations.forEach((d) => {
+          flatRows.push([
+            slNo++,
+            `Fr. ${r.priest.name}`,
+            r.priest.hname || "",
+            r.priest.workingCountry || r.priest.workingRegion || "",
+            d.date ? new Date(d.date).toLocaleDateString() : "",
+            d.purpose || "",
+            d.currency || "",
+            d.amount || 0,
+            d.inrAmount || 0,
+            d.modeOfTransfer || "",
+            d.remarks || "",
+          ]);
+        });
+      }
+    });
+    const wsFlat = XLSX.utils.aoa_to_sheet(flatRows);
+    wsFlat["!cols"] = [
+      { wch: 6 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 12 },
+      { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
+    ];
+    XLSX.utils.book_append_sheet(wb, wsFlat, "All Donations");
+
+    XLSX.writeFile(wb, `Donation_Report${fromDate ? `_${fromDate}` : ""}${toDate ? `_to_${toDate}` : ""}.xlsx`);
   };
 
   const columns = useMemo(() => [
@@ -100,7 +304,7 @@ const DonationReport = () => {
 
   return (
     <Page><CssBaseline />
-      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#4f46e5"><AssessmentIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Donation Report</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>View contributions by priest with date range and country filters</Typography></Box></Box><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!report.length}>Export PDF</GradientBtn></Box></Content></StyledCard>
+      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#4f46e5"><AssessmentIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Donation Report</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>View contributions by priest with date range and country filters</Typography></Box></Box><Box sx={{ display: "flex", gap: 1.5 }}><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportExcel} disabled={!report.length} sx={{ background: "linear-gradient(135deg, #059669, #047857)", "&:hover": { background: "linear-gradient(135deg, #047857, #059669)" } }}>Export Excel</GradientBtn><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!report.length}>Export PDF</GradientBtn></Box></Box></Content></StyledCard>
 
       <StyledCard sx={{ mb: 3, overflow: "visible" }}>
         <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setFiltersOpen(!filtersOpen)}>

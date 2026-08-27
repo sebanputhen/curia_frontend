@@ -15,7 +15,6 @@ import {
 } from "@mui/icons-material";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 
 const Page = styled(Box)(() => ({ backgroundColor: "#f8fafc", minHeight: "100vh", padding: 24 }));
 const StyledCard = styled(Card)(() => ({ backgroundColor: "#fff", borderRadius: 16, boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)", transition: "all 0.3s ease", "&:hover": { transform: "translateY(-4px)", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" } }));
@@ -28,13 +27,8 @@ const GradientText = ({ children, variant = "h5", sx = {} }) => (<Typography var
 const StatBox = styled(Box)(() => ({ padding: "20px 24px", borderRadius: 16, backgroundColor: "#fff", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 180, transition: "all 0.3s ease", "&:hover": { transform: "translateY(-4px)", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" } }));
 const StatValue = styled(Typography)(() => ({ fontSize: "1.6rem", fontWeight: 700, lineHeight: 1.2, background: "linear-gradient(45deg, #1a237e, #0d47a1)", backgroundClip: "text", WebkitBackgroundClip: "text", color: "transparent" }));
 
-// Screen formatters (with symbols)
 const fmtINR = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
 const fmtCurrency = (n, c) => new Intl.NumberFormat("en-US", { style: "currency", currency: c || "USD", maximumFractionDigits: 2 }).format(n || 0);
-
-// PDF-safe formatters (plain ASCII, no special symbols)
-const fmtINR_PDF = (n) => "INR " + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtCurrency_PDF = (n, c) => (c || "USD") + " " + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const OrganizationReport = () => {
   const [report, setReport] = useState([]); const [orgList, setOrgList] = useState([]); const [summary, setSummary] = useState(null);
@@ -50,192 +44,10 @@ const OrganizationReport = () => {
   }, [fromDate, toDate, selectedOrg]);
 
   const exportPDF = () => {
-    if (!report.length) return;
-    const doc = new jsPDF({ orientation: "landscape" });
-    doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("Receivers-wise Donation Report", 14, 18);
-    doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    const parts = [];
-    if (fromDate) parts.push(`From: ${new Date(fromDate).toLocaleDateString()}`);
-    if (toDate) parts.push(`To: ${new Date(toDate).toLocaleDateString()}`);
-    if (selectedOrg) {
-      const orgName = orgList.find((o) => o._id === selectedOrg)?.name || selectedOrg;
-      parts.push(`Receiver: ${orgName}`);
-    }
-    doc.text(parts.length ? parts.join("  |  ") : "All records", 14, 25);
-    if (summary) doc.text(`Receivers: ${summary.totalOrganizations}  |  Active: ${summary.activeOrganizations}  |  NIL: ${summary.nilOrganizations}  |  Total: ${fmtINR_PDF(summary.grandTotalINR)}`, 14, 31);
-
-    // Build flat body array + track org summary row indices
-    const tableBody = [];
-    const orgRowIndices = new Set();
-
-    report.forEach((r, i) => {
-      // Organization summary row
-      orgRowIndices.add(tableBody.length);
-      tableBody.push([
-        i + 1,
-        r.organization.name,
-        r.priestCount,
-        r.donationCount,
-        r.currencies && r.currencies.length ? r.currencies.join(", ") : "-",
-        fmtINR_PDF(r.totalINR),
-        r.isNil ? "NIL" : "Active",
-      ]);
-
-      // Individual donation detail rows
-      if (!r.isNil && r.donations && r.donations.length > 0) {
-        r.donations.forEach((d) => {
-          tableBody.push([
-            "",
-            `    ${d.date ? new Date(d.date).toLocaleDateString() : "-"}`,
-            `Fr. ${d.priestName || "-"}`,
-            d.purpose || "-",
-            d.currency || "",
-            fmtCurrency_PDF(d.amount, d.currency),
-            fmtINR_PDF(d.inrAmount),
-          ]);
-        });
-      }
-    });
-
-    autoTable(doc, {
-      startY: 36,
-      head: [["#", "Receiver / Date", "Priests / Priest", "Donations / Purpose", "Currencies / Currency", "Total INR / Amount", "Status / INR Amount"]],
-      body: tableBody,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [26, 35, 126], textColor: 255, fontStyle: "bold" },
-      willDrawCell: (data) => {
-        if (data.section === "body") {
-          if (orgRowIndices.has(data.row.index)) {
-            data.cell.styles.fontStyle = "bold";
-            data.cell.styles.fillColor = [232, 234, 246];
-            data.cell.styles.textColor = [15, 23, 42];
-          } else {
-            data.cell.styles.textColor = [100, 116, 139];
-            data.cell.styles.fontSize = 7;
-            data.cell.styles.fillColor = [248, 250, 252];
-          }
-        }
-      },
-    });
-
-    doc.save(`Receivers_Report${fromDate ? `_${fromDate}` : ""}${toDate ? `_to_${toDate}` : ""}.pdf`);
-  };
-
-  const exportExcel = () => {
-    if (!report.length) return;
-    const wb = XLSX.utils.book_new();
-
-    // ── Sheet 1: Summary ──
-    const summaryRows = [
-      ["Receivers-wise Donation Report"],
-      [],
-      ["Filter", "Value"],
-      ["From Date", fromDate ? new Date(fromDate).toLocaleDateString() : "All"],
-      ["To Date", toDate ? new Date(toDate).toLocaleDateString() : "All"],
-      ["Receiver", selectedOrg ? (orgList.find((o) => o._id === selectedOrg)?.name || selectedOrg) : "All"],
-      [],
-    ];
-    if (summary) {
-      summaryRows.push(
-        ["Summary", ""],
-        ["Total Receivers", summary.totalOrganizations],
-        ["Active Receivers", summary.activeOrganizations],
-        ["NIL Receivers", summary.nilOrganizations],
-        ["Grand Total (INR)", summary.grandTotalINR],
-      );
-    }
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-    wsSummary["!cols"] = [{ wch: 22 }, { wch: 20 }];
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-
-    // ── Sheet 2: Receiver-wise with donation details ──
-    const detailHeaders = [
-      "Sl No", "Receiver", "# Priests", "# Donations", "Currencies", "Total INR", "Status",
-      "", // spacer
-      "Date", "Priest", "Purpose", "Currency", "Amount", "INR Amount", "Mode",
-    ];
-    const detailRows = [detailHeaders];
-
-    report.forEach((r, i) => {
-      // Org summary row
-      detailRows.push([
-        i + 1,
-        r.organization.name,
-        r.priestCount,
-        r.donationCount,
-        r.currencies && r.currencies.length ? r.currencies.join(", ") : "",
-        r.totalINR || 0,
-        r.isNil ? "NIL" : "Active",
-        "", "", "", "", "", "", "", "",
-      ]);
-
-      // Donation detail rows
-      if (!r.isNil && r.donations && r.donations.length > 0) {
-        r.donations.forEach((d) => {
-          detailRows.push([
-            "", "", "", "", "", "", "",
-            "", // spacer
-            d.date ? new Date(d.date).toLocaleDateString() : "",
-            d.priestName ? `Fr. ${d.priestName}` : "",
-            d.purpose || "",
-            d.currency || "",
-            d.amount || 0,
-            d.inrAmount || 0,
-            d.modeOfTransfer || "",
-          ]);
-        });
-      }
-    });
-
-    const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
-    wsDetail["!cols"] = [
-      { wch: 6 },   // Sl No
-      { wch: 24 },  // Receiver
-      { wch: 10 },  // # Priests
-      { wch: 12 },  // # Donations
-      { wch: 14 },  // Currencies
-      { wch: 16 },  // Total INR
-      { wch: 10 },  // Status
-      { wch: 2 },   // spacer
-      { wch: 12 },  // Date
-      { wch: 22 },  // Priest
-      { wch: 20 },  // Purpose
-      { wch: 10 },  // Currency
-      { wch: 14 },  // Amount
-      { wch: 14 },  // INR Amount
-      { wch: 14 },  // Mode
-    ];
-    XLSX.utils.book_append_sheet(wb, wsDetail, "Receiver Details");
-
-    // ── Sheet 3: Flat donation list ──
-    const flatHeaders = ["Sl No", "Receiver", "Date", "Priest", "Purpose", "Currency", "Amount", "INR Amount", "Mode"];
-    const flatRows = [flatHeaders];
-    let slNo = 1;
-    report.forEach((r) => {
-      if (!r.isNil && r.donations && r.donations.length > 0) {
-        r.donations.forEach((d) => {
-          flatRows.push([
-            slNo++,
-            r.organization.name,
-            d.date ? new Date(d.date).toLocaleDateString() : "",
-            d.priestName ? `Fr. ${d.priestName}` : "",
-            d.purpose || "",
-            d.currency || "",
-            d.amount || 0,
-            d.inrAmount || 0,
-            d.modeOfTransfer || "",
-          ]);
-        });
-      }
-    });
-    const wsFlat = XLSX.utils.aoa_to_sheet(flatRows);
-    wsFlat["!cols"] = [
-      { wch: 6 }, { wch: 24 }, { wch: 12 }, { wch: 22 }, { wch: 20 },
-      { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
-    ];
-    XLSX.utils.book_append_sheet(wb, wsFlat, "All Donations");
-
-    XLSX.writeFile(wb, `Receivers_Report${fromDate ? `_${fromDate}` : ""}${toDate ? `_to_${toDate}` : ""}.xlsx`);
+    if (!report.length) return; const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.text("Organization-wise Donation Report", 14, 18);
+    autoTable(doc, { startY: 28, head: [["#", "Organization", "Priests", "Donations", "Total (INR)", "Status"]], body: report.map((r, i) => [i + 1, r.organization.name, r.priestCount, r.donationCount, fmtINR(r.totalINR), r.isNil ? "NIL" : "Active"]), styles: { fontSize: 8 }, headStyles: { fillColor: [26, 35, 126], textColor: 255 } });
+    doc.save(`Receivers_Report.pdf`);
   };
 
   const columns = useMemo(() => [
@@ -251,12 +63,12 @@ const OrganizationReport = () => {
     { title: "Receivers", value: summary.totalOrganizations, icon: <BusinessIcon />, color: "#4f46e5" },
     { title: "Active", value: summary.activeOrganizations, icon: <DonationIcon />, color: "#059669" },
     { title: "NIL", value: summary.nilOrganizations, icon: <BusinessIcon />, color: "#DC2626" },
-    { title: "Grand Total (INR)", value: fmtINR(summary.grandTotalINR), icon: <RupeeIcon />, color: "#ea580c" },
+    { title: "Grand Total (INR)", value: fmtINR(summary.grandTotalINR), icon: <RupeeIcon />, color: "#ea580c" }, 
   ] : [];
 
   return (
     <Page><CssBaseline />
-      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#7c3aed"><BusinessIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Receivers Report</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Donation summary grouped by Receivers</Typography></Box></Box><Box sx={{ display: "flex", gap: 1.5 }}><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportExcel} disabled={!report.length} sx={{ background: "linear-gradient(135deg, #059669, #047857)", "&:hover": { background: "linear-gradient(135deg, #047857, #059669)" } }}>Export Excel</GradientBtn><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!report.length}>Export PDF</GradientBtn></Box></Box></Content></StyledCard>
+      <StyledCard sx={{ mb: 3 }}><Content><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><Box sx={{ display: "flex", alignItems: "center", gap: 2 }}><IconBox color="#7c3aed"><BusinessIcon sx={{ fontSize: 26 }} /></IconBox><Box><GradientText>Receivers Report</GradientText><Typography variant="body2" sx={{ color: "#64748B" }}>Donation summary grouped by Receivers</Typography></Box></Box><GradientBtn startIcon={<FileDownloadIcon />} onClick={exportPDF} disabled={!report.length}>Export PDF</GradientBtn></Box></Content></StyledCard>
 
       <StyledCard sx={{ mb: 3, overflow: "visible" }}>
         <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setFiltersOpen(!filtersOpen)}>
