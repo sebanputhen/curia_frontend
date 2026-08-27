@@ -222,5 +222,5 @@ const PriestLedger = () => {
     </Page>
   );
 };
-
+ 
 export default PriestLedger;
