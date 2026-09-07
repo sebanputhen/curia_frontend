@@ -179,19 +179,19 @@ const Priest = () => {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
-  // useEffect(() => { fetchPriests(); fetchParishes(); fetchCongregations(); }, []);
-useEffect(() => { fetchPriests(); }, []);
+  useEffect(() => { fetchPriests(); }, []);
 
-const openDialog = (priest = null) => {
-  if (!parishes.length) fetchParishes();
-  if (!congregations.length) fetchCongregations();
-  if (priest) {
-    handleEdit(priest);
-  } else {
-    resetForm();
-    setIsModalVisible(true);
-  }
-};
+  const openDialog = (priest = null) => {
+    if (!parishes.length) fetchParishes();
+    if (!congregations.length) fetchCongregations();
+    if (priest) {
+      handleEdit(priest);
+    } else {
+      resetForm();
+      setIsModalVisible(true);
+    }
+  };
+
   const fetchPriests = async () => {
     setIsLoading(true);
     try {
@@ -285,7 +285,8 @@ const openDialog = (priest = null) => {
     if (payload.homeType !== "homeDiocese") payload.homeParish = null;
     if (payload.homeType !== "otherDiocese") payload.homeParishText = "";
     if (payload.homeType !== "congregation") payload.homeCongregation = null;
-    if (payload.status !== "retired" && payload.status !== "died" && payload.status !== "inactive") payload.statusDate = null;
+    // ── statusDate: allowed for inactive, retired, died ──
+    if (payload.status === "active") payload.statusDate = null;
     if (payload.status !== "retired") payload.restHome = "";
     if (payload.workingRegion !== "Abroad") payload.workingCountry = "";
     try {
@@ -459,7 +460,6 @@ const openDialog = (priest = null) => {
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Edit">
-            {/* <IconButton size="small" onClick={() => handleEdit(row.original)} */}
             <IconButton size="small" onClick={() => openDialog(row.original)}
               sx={{ bgcolor: "#E8EAF6", "&:hover": { bgcolor: "#C5CAE9" } }}>
               <EditIcon fontSize="small" sx={{ color: "#1a237e" }} />
@@ -517,7 +517,6 @@ const openDialog = (priest = null) => {
                   </GradientButton>
                 )}
               </Box>
-              {/* <GradientButton startIcon={<Plus size={18} />} onClick={() => { setIsModalVisible(true); resetForm(); }}> */}
               <GradientButton startIcon={<Plus size={18} />} onClick={() => openDialog()}>
                 Add New Priest
               </GradientButton>
@@ -697,7 +696,7 @@ const openDialog = (priest = null) => {
                 <SectionLabel><CalendarIcon sx={{ fontSize: 14, color: "#0d47a1" }} /> Status</SectionLabel>
                 <Divider sx={{ mb: 2, borderColor: "#E2E8F0" }} />
               </Grid>
-              <Grid item xs={12} sm={formData.status === "retired" || formData.status === "died" || formData.status === "inactive" ? 4 : 6}>
+              <Grid item xs={12} sm={["inactive", "retired", "died"].includes(formData.status) ? 4 : 6}>
                 <StyledTextField select label="Status" value={formData.status}
                   onChange={(e) => { setFormData((prev) => ({ ...prev, status: e.target.value, statusDate: "", restHome: "" })); }}
                   fullWidth required>
@@ -711,9 +710,14 @@ const openDialog = (priest = null) => {
                   ))}
                 </StyledTextField>
               </Grid>
-              {(formData.status === "retired" || formData.status === "died" || formData.status === "inactive") && (
-  <Grid item xs={12} sm={4}>
-    <StyledTextField label={formData.status === "retired" ? "Retirement Date" : formData.status === "died" ? "Date of Death" : "Inactive From"}
+              {["inactive", "retired", "died"].includes(formData.status) && (
+                <Grid item xs={12} sm={4}>
+                  <StyledTextField
+                    label={
+                      formData.status === "retired" ? "Retirement Date"
+                        : formData.status === "died" ? "Date of Death"
+                        : "Inactive From"
+                    }
                     type="date" value={formData.statusDate}
                     onChange={(e) => setField("statusDate", e.target.value)}
                     InputLabelProps={{ shrink: true }} fullWidth required />
