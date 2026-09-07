@@ -17,7 +17,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
-// ─── Styled ───────────────────────────────────────────────────────────────────
+// ─── Styled (Home theme) ──────────────────────────────────────────────────────
 const Page = styled(Box)(() => ({ backgroundColor: "#f8fafc", minHeight: "100vh", padding: 24 }));
 const StyledCard = styled(Card)(() => ({ backgroundColor: "#fff", borderRadius: 16, boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)", transition: "all 0.3s ease", "&:hover": { transform: "translateY(-4px)", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" } }));
 const Content = styled(CardContent)(({ theme }) => ({ padding: theme.spacing(3) }));
@@ -42,126 +42,10 @@ const StatValue = styled(Typography)(() => ({
 
 const fmtINR = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
 const fmtCurrency = (n, c) => new Intl.NumberFormat("en-US", { style: "currency", currency: c || "USD", maximumFractionDigits: 2 }).format(n || 0);
+
+// PDF-safe versions — no special symbols, just plain ASCII currency codes + number
 const fmtINR_PDF = (n) => "INR " + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtCurrency_PDF = (n, c) => (c || "USD") + " " + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-// ─── Status History Helper ────────────────────────────────────────────────────
-//
-// Checks if any non-active period overlaps with the report date range.
-// Two checks:
-//   1. CURRENT status: if not active, inactive from priest.statusDate onwards (no end)
-//   2. HISTORY entries: each non-active entry ran from entry.date (statusDate)
-//      until entry.changedAt (or the next entry's changedAt/date as fallback)
-//
-// If ANY non-active window overlaps [from, to], priest is excluded.
-
-// const wasActiveDuring = (priest, fromStr, toStr) => {
-//   // No date filter → just check current status
-//   if (!fromStr && !toStr) {
-//     return !priest.status || priest.status === "active";
-//   }
-
-//   const from = fromStr ? new Date(fromStr) : new Date("1900-01-01");
-//   const to = toStr ? new Date(toStr + "T23:59:59.999Z") : new Date("2099-12-31");
-
-//   // ── Check 1: Current status ──
-//   if (priest.status && priest.status !== "active") {
-//     const inactiveFrom = priest.statusDate
-//       ? new Date(priest.statusDate)
-//       : new Date("1900-01-01");
-//     // Currently inactive from inactiveFrom until forever — overlaps?
-//     if (inactiveFrom <= to) return false;
-//   }
-
-//   // ── Check 2: Historical non-active periods ──
-//   const history = priest.statusHistory || [];
-//   for (let i = 0; i < history.length; i++) {
-//     if (history[i].status === "active") continue;
-
-//     // Start of this non-active period = its statusDate
-//     const start = history[i].date
-//       ? new Date(history[i].date)
-//       : new Date("1900-01-01");
-
-//     // End of this non-active period = when they LEFT this status
-//     let end;
-//     if (history[i].changedAt) {
-//       // Best: exact transition timestamp
-//       end = new Date(history[i].changedAt);
-//     } else if (i + 1 < history.length) {
-//       // Fallback: next history entry's changedAt or date
-//       end = new Date(history[i + 1].changedAt || history[i + 1].date);
-//     } else {
-//       // Last entry without changedAt — use start as end (point-in-time check)
-//       end = new Date(start);
-//     }
-
-//     // Does [start, end] overlap with [from, to]?
-//     if (start <= to && end >= from) {
-//       return false;
-//     }
-//   }
-
-//   return true;
-// };
-// const wasActiveDuring = (priest, fromStr, toStr) => {
-//   // No date filter → just check current status
-//   if (!fromStr && !toStr) {
-//     return !priest.status || priest.status === "active";
-//   }
-
-//   // If currently active → always show
-//   if (!priest.status || priest.status === "active") return true;
-
-//   // Currently not active — check if they were already inactive before report starts
-//   if (!priest.statusDate) return false; // no date = treat as always inactive
-
-//   const inactiveFrom = new Date(priest.statusDate);
-//   const from = new Date(fromStr || "1900-01-01");
-
-//   // If they became inactive before or on report start → exclude
-//   // If they became inactive after report start → they were active for part of the period → include
-//   return inactiveFrom > from;
-// };
-const wasActiveDuring = (priest, fromStr, toStr) => {
-  // No date filter → just check current status
-  if (!fromStr && !toStr) {
-    return !priest.status || priest.status === "active";
-  }
-
-  const fromDate = fromStr ? fromStr.substring(0, 10) : "1900-01-01";
-
-  // ── Check 1: Current status ──
-  if (priest.status && priest.status !== "active") {
-    const inactiveFrom = priest.statusDate
-      ? priest.statusDate.substring(0, 10)
-      : "1900-01-01";
-    // Currently inactive from this date onwards (no end)
-    if (inactiveFrom <= fromDate) return false;
-  }
-
-  // ── Check 2: Past inactive periods from history ──
-  const history = priest.statusHistory || [];
-  for (const entry of history) {
-    if (entry.status === "active") continue;
-
-    const start = entry.date
-      ? new Date(entry.date).toISOString().substring(0, 10)
-      : "1900-01-01";
-    const end = entry.changedAt
-      ? new Date(entry.changedAt).toISOString().substring(0, 10)
-      : start;
-
-    // Was inactive on the report's from-date?
-    // start <= fromDate AND end > fromDate (reactivated AFTER that day)
-    if (start <= fromDate && end > fromDate) {
-      return false;
-    }
-  }
-
-  return true;
-};
-// ─── Component ────────────────────────────────────────────────────────────────
 
 const DonationReport = () => {
   const [report, setReport] = useState([]);
@@ -184,22 +68,7 @@ const DonationReport = () => {
       if (toDate) params.to = toDate;
       if (country) params.country = country;
       const res = await axiosInstance.get("/donation-report", { params });
-
-      // ── Filter: only priests who were active during the entire report period ──
-      const filtered = (res.data.report || []).filter((r) =>
-        wasActiveDuring(r.priest, fromDate, toDate)
-      );
-      setReport(filtered);
-      setCountries(res.data.countries || []);
-
-      const contributingPriests = filtered.filter((r) => !r.isNil).length;
-      setSummary({
-        totalPriests: filtered.length,
-        contributingPriests,
-        nilPriests: filtered.filter((r) => r.isNil).length,
-        grandTotalINR: filtered.reduce((s, r) => s + (r.totalINR || 0), 0),
-        grandTotalDonations: filtered.reduce((s, r) => s + (r.donationCount || 0), 0),
-      });
+      setReport(res.data.report || []); setCountries(res.data.countries || []); setSummary(res.data.summary || null);
     } catch { setMsg({ type: "error", text: "Failed to generate report" }); }
     finally { setLoading(false); }
   }, [fromDate, toDate, country]);
@@ -216,6 +85,7 @@ const DonationReport = () => {
     doc.text(parts.length ? parts.join("  |  ") : "All records", 14, 25);
     if (summary) doc.text(`Priests: ${summary.totalPriests}  |  Contributors: ${summary.contributingPriests}  |  NIL: ${summary.nilPriests}  |  Total: ${fmtINR_PDF(summary.grandTotalINR)}`, 14, 31);
 
+    // Build flat body array + track which row indices are priest summary rows
     const tableBody = [];
     const priestRowIndices = new Set();
 
@@ -227,20 +97,30 @@ const DonationReport = () => {
           }).join(", ")
         : "-";
 
+      // Priest summary row
       priestRowIndices.add(tableBody.length);
       tableBody.push([
-        i + 1, `Fr. ${r.priest.name}`, r.priest.hname || "",
+        i + 1,
+        `Fr. ${r.priest.name}`,
+        r.priest.hname || "",
         r.priest.workingCountry || r.priest.workingRegion || "",
-        r.donationCount, foreignTotal, fmtINR_PDF(r.totalINR),
+        r.donationCount,
+        foreignTotal,
+        fmtINR_PDF(r.totalINR),
         r.isNil ? "NIL" : "Contributed",
       ]);
 
+      // Individual donation detail rows under this priest
       if (!r.isNil && r.donations && r.donations.length > 0) {
         r.donations.forEach((d) => {
           tableBody.push([
-            "", `    ${d.date ? new Date(d.date).toLocaleDateString() : "-"}`,
-            d.purpose || "-", d.modeOfTransfer || "-", d.currency || "",
-            fmtCurrency_PDF(d.amount, d.currency), fmtINR_PDF(d.inrAmount),
+            "",
+            `    ${d.date ? new Date(d.date).toLocaleDateString() : "-"}`,
+            d.purpose || "-",
+            d.modeOfTransfer || "-",
+            d.currency || "",
+            fmtCurrency_PDF(d.amount, d.currency),
+            fmtINR_PDF(d.inrAmount),
             d.remarks || "-",
           ]);
         });
@@ -267,6 +147,7 @@ const DonationReport = () => {
         }
       },
     });
+
     doc.save(`Donation_Report${fromDate ? `_${fromDate}` : ""}${toDate ? `_to_${toDate}` : ""}.pdf`);
   };
 
@@ -274,12 +155,15 @@ const DonationReport = () => {
     if (!report.length) return;
     const wb = XLSX.utils.book_new();
 
+    // ── Sheet 1: Summary ──
     const summaryRows = [
-      ["Donation Report"], [],
+      ["Donation Report"],
+      [],
       ["Filter", "Value"],
       ["From Date", fromDate ? new Date(fromDate).toLocaleDateString() : "All"],
       ["To Date", toDate ? new Date(toDate).toLocaleDateString() : "All"],
-      ["Country", country || "All"], [],
+      ["Country", country || "All"],
+      [],
     ];
     if (summary) {
       summaryRows.push(
@@ -292,47 +176,82 @@ const DonationReport = () => {
       );
     }
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+    // Make title bold-ish via column widths
     wsSummary["!cols"] = [{ wch: 22 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
 
+    // ── Sheet 2: Priest-wise with donation details ──
     const detailHeaders = [
       "Sl No", "Priest Name", "House Name", "Country", "Phone",
       "# Donations", "Total Foreign", "Total INR", "Status",
-      "", "Date", "Purpose", "Currency", "Amount", "INR Amount", "Mode", "Remarks",
+      "", // spacer
+      "Date", "Purpose", "Currency", "Amount", "INR Amount", "Mode", "Remarks",
     ];
     const detailRows = [detailHeaders];
+
     report.forEach((r, i) => {
       const foreignTotal = r.currencies && r.currencies.length
         ? r.currencies.map((c) => {
             const sum = (r.donations || []).filter((d) => d.currency === c).reduce((s, d) => s + d.amount, 0);
             return `${c} ${Number(sum).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-          }).join(", ") : "-";
+          }).join(", ")
+        : "-";
+
+      // Priest summary row
       detailRows.push([
-        i + 1, `Fr. ${r.priest.name}`, r.priest.hname || "",
+        i + 1,
+        `Fr. ${r.priest.name}`,
+        r.priest.hname || "",
         r.priest.workingCountry || r.priest.workingRegion || "",
-        r.priest.phone || "", r.donationCount, foreignTotal,
-        r.totalINR || 0, r.isNil ? "NIL" : "Contributed",
+        r.priest.phone || "",
+        r.donationCount,
+        foreignTotal,
+        r.totalINR || 0,
+        r.isNil ? "NIL" : "Contributed",
         "", "", "", "", "", "", "", "",
       ]);
+
+      // Donation detail rows
       if (!r.isNil && r.donations && r.donations.length > 0) {
         r.donations.forEach((d) => {
           detailRows.push([
-            "", "", "", "", "", "", "", "", "", "",
+            "", "", "", "", "", "", "", "", "",
+            "", // spacer
             d.date ? new Date(d.date).toLocaleDateString() : "",
-            d.purpose || "", d.currency || "", d.amount || 0,
-            d.inrAmount || 0, d.modeOfTransfer || "", d.remarks || "",
+            d.purpose || "",
+            d.currency || "",
+            d.amount || 0,
+            d.inrAmount || 0,
+            d.modeOfTransfer || "",
+            d.remarks || "",
           ]);
         });
       }
     });
+
     const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
     wsDetail["!cols"] = [
-      { wch: 6 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
-      { wch: 12 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 2 },
-      { wch: 12 }, { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
+      { wch: 6 },   // Sl No
+      { wch: 22 },  // Priest Name
+      { wch: 18 },  // House Name
+      { wch: 14 },  // Country
+      { wch: 14 },  // Phone
+      { wch: 12 },  // # Donations
+      { wch: 22 },  // Total Foreign
+      { wch: 16 },  // Total INR
+      { wch: 12 },  // Status
+      { wch: 2 },   // spacer
+      { wch: 12 },  // Date
+      { wch: 20 },  // Purpose
+      { wch: 10 },  // Currency
+      { wch: 14 },  // Amount
+      { wch: 14 },  // INR Amount
+      { wch: 14 },  // Mode
+      { wch: 20 },  // Remarks
     ];
     XLSX.utils.book_append_sheet(wb, wsDetail, "Donation Details");
 
+    // ── Sheet 3: Flat donation list (all donations in one simple table) ──
     const flatHeaders = ["Sl No", "Priest", "House Name", "Country", "Date", "Purpose", "Currency", "Amount", "INR Amount", "Mode", "Remarks"];
     const flatRows = [flatHeaders];
     let slNo = 1;
@@ -340,11 +259,17 @@ const DonationReport = () => {
       if (!r.isNil && r.donations && r.donations.length > 0) {
         r.donations.forEach((d) => {
           flatRows.push([
-            slNo++, `Fr. ${r.priest.name}`, r.priest.hname || "",
+            slNo++,
+            `Fr. ${r.priest.name}`,
+            r.priest.hname || "",
             r.priest.workingCountry || r.priest.workingRegion || "",
             d.date ? new Date(d.date).toLocaleDateString() : "",
-            d.purpose || "", d.currency || "", d.amount || 0,
-            d.inrAmount || 0, d.modeOfTransfer || "", d.remarks || "",
+            d.purpose || "",
+            d.currency || "",
+            d.amount || 0,
+            d.inrAmount || 0,
+            d.modeOfTransfer || "",
+            d.remarks || "",
           ]);
         });
       }
@@ -355,6 +280,7 @@ const DonationReport = () => {
       { wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
     ];
     XLSX.utils.book_append_sheet(wb, wsFlat, "All Donations");
+
     XLSX.writeFile(wb, `Donation_Report${fromDate ? `_${fromDate}` : ""}${toDate ? `_to_${toDate}` : ""}.xlsx`);
   };
 
